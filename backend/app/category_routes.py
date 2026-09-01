@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.firebase import db
+from app.auth import verify_admin
 
 router = APIRouter(
     prefix="/api/categories",
@@ -14,19 +15,9 @@ class Category(BaseModel):
     image: str | None = None
 
 
-@router.post("/")
-def create_category(category: Category):
-    doc_ref = db.collection("productCategories").document()
-
-    category_data = category.model_dump()
-    doc_ref.set(category_data)
-
-    return {
-        "message": "Category created successfully",
-        "id": doc_ref.id,
-        "category": category_data
-    }
-
+# =========================
+# PUBLIC APIs
+# =========================
 
 @router.get("/")
 def get_categories():
@@ -59,8 +50,34 @@ def get_category(category_id: str):
     return category
 
 
+# =========================
+# ADMIN APIs
+# =========================
+
+@router.post("/")
+def create_category(
+    category: Category,
+    admin=Depends(verify_admin)
+):
+    doc_ref = db.collection("productCategories").document()
+
+    category_data = category.model_dump()
+
+    doc_ref.set(category_data)
+
+    return {
+        "message": "Category created successfully",
+        "id": doc_ref.id,
+        "category": category_data
+    }
+
+
 @router.put("/{category_id}")
-def update_category(category_id: str, category: Category):
+def update_category(
+    category_id: str,
+    category: Category,
+    admin=Depends(verify_admin)
+):
     doc_ref = db.collection("productCategories").document(category_id)
 
     if not doc_ref.get().exists:
@@ -70,6 +87,7 @@ def update_category(category_id: str, category: Category):
         )
 
     category_data = category.model_dump()
+
     doc_ref.update(category_data)
 
     return {
@@ -80,7 +98,10 @@ def update_category(category_id: str, category: Category):
 
 
 @router.delete("/{category_id}")
-def delete_category(category_id: str):
+def delete_category(
+    category_id: str,
+    admin=Depends(verify_admin)
+):
     doc_ref = db.collection("productCategories").document(category_id)
 
     if not doc_ref.get().exists:

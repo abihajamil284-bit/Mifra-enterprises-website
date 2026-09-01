@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from app.firebase import db
+from app.auth import verify_admin
 
 router = APIRouter(
     prefix="/api/services",
@@ -16,20 +17,9 @@ class Service(BaseModel):
     image: str | None = None
 
 
-@router.post("/")
-def create_service(service: Service):
-    doc_ref = db.collection("services").document()
-
-    service_data = service.model_dump()
-
-    doc_ref.set(service_data)
-
-    return {
-        "message": "Service created successfully",
-        "id": doc_ref.id,
-        "service": service_data
-    }
-
+# =========================
+# PUBLIC APIs
+# =========================
 
 @router.get("/")
 def get_services():
@@ -62,8 +52,34 @@ def get_service(service_id: str):
     return service
 
 
+# =========================
+# ADMIN APIs
+# =========================
+
+@router.post("/")
+def create_service(
+    service: Service,
+    admin=Depends(verify_admin)
+):
+    doc_ref = db.collection("services").document()
+
+    service_data = service.model_dump()
+
+    doc_ref.set(service_data)
+
+    return {
+        "message": "Service created successfully",
+        "id": doc_ref.id,
+        "service": service_data
+    }
+
+
 @router.put("/{service_id}")
-def update_service(service_id: str, service: Service):
+def update_service(
+    service_id: str,
+    service: Service,
+    admin=Depends(verify_admin)
+):
     doc_ref = db.collection("services").document(service_id)
 
     if not doc_ref.get().exists:
@@ -84,7 +100,10 @@ def update_service(service_id: str, service: Service):
 
 
 @router.delete("/{service_id}")
-def delete_service(service_id: str):
+def delete_service(
+    service_id: str,
+    admin=Depends(verify_admin)
+):
     doc_ref = db.collection("services").document(service_id)
 
     if not doc_ref.get().exists:
