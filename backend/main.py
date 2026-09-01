@@ -1,4 +1,8 @@
+import os
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.product_routes import router as product_router
 from app.service_routes import router as service_router
 from app.category_routes import router as category_router
@@ -11,6 +15,19 @@ from app.admin_routes import router as admin_router
 app = FastAPI(
     title="Mifra Enterprises API",
     version="1.0.0",
+)
+
+cors_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+).split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in cors_origins if origin.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
