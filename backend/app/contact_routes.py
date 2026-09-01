@@ -18,12 +18,12 @@ class ContactMessage(BaseModel):
     message: str
 
 
-class ContactMessageStatus(BaseModel):
+class MessageStatusUpdate(BaseModel):
     status: str
 
 
 # ==========================================
-# CREATE CONTACT MESSAGE - PUBLIC
+# PUBLIC - CREATE CONTACT MESSAGE
 # ==========================================
 
 @router.post("/")
@@ -45,13 +45,11 @@ def create_contact_message(contact: ContactMessage):
 
 
 # ==========================================
-# GET ALL CONTACT MESSAGES - ADMIN
+# ADMIN - GET ALL CONTACT MESSAGES
 # ==========================================
 
 @router.get("/")
-def get_contact_messages(
-    admin=Depends(verify_admin)
-):
+def get_contact_messages(admin=Depends(verify_admin)):
 
     messages = []
 
@@ -62,15 +60,17 @@ def get_contact_messages(
     )
 
     for doc in docs:
+
         message_data = doc.to_dict()
         message_data["id"] = doc.id
+
         messages.append(message_data)
 
     return messages
 
 
 # ==========================================
-# GET SINGLE CONTACT MESSAGE - ADMIN
+# ADMIN - GET SINGLE CONTACT MESSAGE
 # ==========================================
 
 @router.get("/{message_id}")
@@ -95,56 +95,27 @@ def get_contact_message(
 
 
 # ==========================================
-# UPDATE CONTACT MESSAGE STATUS - ADMIN
+# ADMIN - UPDATE MESSAGE STATUS
 # ==========================================
 
 @router.put("/{message_id}")
-def update_contact_message(
+def update_contact_message_status(
     message_id: str,
-    request: ContactMessageStatus,
+    status: MessageStatusUpdate,
     admin=Depends(verify_admin)
 ):
 
-    doc_ref = db.collection("contactMessages").document(message_id)
-
-    if not doc_ref.get().exists:
-        raise HTTPException(
-            status_code=404,
-            detail="Contact message not found"
-        )
-
     allowed_statuses = [
-        "read",
-        "unread"
+        "unread",
+        "read"
     ]
 
-    if request.status not in allowed_statuses:
+    if status.status not in allowed_statuses:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid status. Allowed: {allowed_statuses}"
         )
 
-    doc_ref.update({
-        "status": request.status
-    })
-
-    return {
-        "message": "Contact message status updated successfully",
-        "id": message_id,
-        "status": request.status
-    }
-
-
-# ==========================================
-# DELETE CONTACT MESSAGE - ADMIN
-# ==========================================
-
-@router.delete("/{message_id}")
-def delete_contact_message(
-    message_id: str,
-    admin=Depends(verify_admin)
-):
-
     doc_ref = db.collection("contactMessages").document(message_id)
 
     if not doc_ref.get().exists:
@@ -153,9 +124,12 @@ def delete_contact_message(
             detail="Contact message not found"
         )
 
-    doc_ref.delete()
+    doc_ref.update({
+        "status": status.status
+    })
 
     return {
-        "message": "Contact message deleted successfully",
-        "id": message_id
+        "message": "Contact message status updated successfully",
+        "id": message_id,
+        "status": status.status
     }

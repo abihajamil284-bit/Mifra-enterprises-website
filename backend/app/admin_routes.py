@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from app.auth import verify_admin
 from app.firebase import db
 
@@ -40,10 +41,9 @@ def get_admin_dashboard(admin=Depends(verify_admin)):
     out_of_stock_products = 0
 
     for doc in products_docs:
+
         product = doc.to_dict()
 
-        # Only active products count
-        # Default is True if field doesn't exist
         is_active = product.get("isActive", True)
 
         if not is_active:
@@ -86,7 +86,6 @@ def get_admin_dashboard(admin=Depends(verify_admin)):
         if status in ["new", "contacted", "in_progress"]:
             pending_product_requests += 1
 
-        # Recent requests
         if len(recent_requests) < 5:
             request["request_type"] = "product"
             recent_requests.append(request)
@@ -112,7 +111,6 @@ def get_admin_dashboard(admin=Depends(verify_admin)):
         if status in ["new", "contacted", "in_progress"]:
             pending_service_requests += 1
 
-        # Add service requests to recent list
         if len(recent_requests) < 5:
             request["id"] = doc.id
             request["request_type"] = "service"
@@ -145,4 +143,151 @@ def get_admin_dashboard(admin=Depends(verify_admin)):
             "pending_service": pending_service_requests
         },
         "recent_requests": recent_requests
+    }
+
+
+# ==========================================
+# ADMIN REQUESTS
+# ==========================================
+
+@router.get("/requests")
+def get_admin_requests(admin=Depends(verify_admin)):
+
+    requests = []
+
+    # ------------------------------------------
+    # PRODUCT REQUESTS
+    # ------------------------------------------
+
+    product_docs = (
+        db.collection("productRequests")
+        .order_by("created_at", direction="DESCENDING")
+        .stream()
+    )
+
+    for doc in product_docs:
+
+        request = doc.to_dict()
+        request["id"] = doc.id
+        request["request_type"] = "product"
+
+        requests.append(request)
+
+    # ------------------------------------------
+    # SERVICE REQUESTS
+    # ------------------------------------------
+
+    service_docs = (
+        db.collection("serviceRequests")
+        .order_by("created_at", direction="DESCENDING")
+        .stream()
+    )
+
+    for doc in service_docs:
+
+        request = doc.to_dict()
+        request["id"] = doc.id
+        request["request_type"] = "service"
+
+        requests.append(request)
+
+    # ------------------------------------------
+    # SORT BY CREATED DATE
+    # ------------------------------------------
+
+    requests.sort(
+        key=lambda x: x.get("created_at"),
+        reverse=True
+    )
+
+    return requests
+
+
+# ==========================================
+# REQUEST STATUS UPDATE MODEL
+# ==========================================
+
+class RequestStatusUpdate(BaseModel):
+    status: str
+    request_type: str
+
+
+# ==========================================
+# UPDATE REQUEST STATUS
+# ==========================================
+
+@router.put("/requests/{request_id}")
+def update_admin_request(
+    request_id: str,
+    request: RequestStatusUpdate,
+    admin=Depends(verify_admin)
+):
+
+    allowed_statuses = [
+        "new",
+        "contacted",
+        "in_progress",
+        "completed",
+        "cancelled"
+    ]
+
+    # ------------------------------------------
+    # VALIDATE STATUS
+    # ------------------------------------------
+
+    if request.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status. Allowed: {allowed_statuses}"
+        )
+
+    # ------------------------------------------
+    # VALIDATE REQUEST TYPE
+    # ------------------------------------------
+
+    if request.request_type not in ["product", "service"]:
+        raise HTTPException(
+            status_code=400,
+            detail="request_type must be 'product' or 'service'"
+        )
+
+    # ------------------------------------------
+    # SELECT COLLECTION
+    # ------------------------------------------
+
+    if request.request_type == "product":
+        collection_name = "productRequests"
+    else:
+        collection_name = "serviceRequests"
+
+    # ------------------------------------------
+    # FIND REQUEST
+    # ------------------------------------------
+
+    doc_ref = db.collection(collection_name).document(request_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Request not found"
+        )
+
+    # ------------------------------------------
+    # UPDATE STATUS
+    # ------------------------------------------
+
+    doc_ref.update({
+        "status": request.status
+    })
+
+    # ------------------------------------------
+    # RESPONSE
+    # ------------------------------------------
+
+    return {
+        "message": "Request status updated successfully",
+        "id": request_id,
+        "request_type": request.request_type,
+        "status": request.status
     }
