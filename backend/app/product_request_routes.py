@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
+from app.auth import verify_admin
 from datetime import datetime, timezone
 
 router = APIRouter(
@@ -17,6 +18,14 @@ class ProductRequest(BaseModel):
     quantity: int
     message: str | None = None
 
+
+class ProductRequestStatus(BaseModel):
+    status: str
+
+
+# ==========================================
+# CREATE PRODUCT REQUEST - PUBLIC
+# ==========================================
 
 @router.post("/")
 def create_product_request(request: ProductRequest):
@@ -46,8 +55,12 @@ def create_product_request(request: ProductRequest):
     }
 
 
+# ==========================================
+# GET ALL PRODUCT REQUESTS - ADMIN
+# ==========================================
+
 @router.get("/")
-def get_product_requests():
+def get_product_requests(admin=Depends(verify_admin)):
 
     requests = []
 
@@ -65,8 +78,15 @@ def get_product_requests():
     return requests
 
 
+# ==========================================
+# GET SINGLE PRODUCT REQUEST - ADMIN
+# ==========================================
+
 @router.get("/{request_id}")
-def get_product_request(request_id: str):
+def get_product_request(
+    request_id: str,
+    admin=Depends(verify_admin)
+):
 
     doc_ref = db.collection("productRequests").document(request_id)
     doc = doc_ref.get()
@@ -81,3 +101,72 @@ def get_product_request(request_id: str):
     request_data["id"] = doc.id
 
     return request_data
+
+
+# ==========================================
+# UPDATE PRODUCT REQUEST STATUS - ADMIN
+# ==========================================
+
+@router.put("/{request_id}")
+def update_product_request(
+    request_id: str,
+    request: ProductRequestStatus,
+    admin=Depends(verify_admin)
+):
+
+    doc_ref = db.collection("productRequests").document(request_id)
+
+    if not doc_ref.get().exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Product request not found"
+        )
+
+    allowed_statuses = [
+        "new",
+        "contacted",
+        "completed",
+        "cancelled"
+    ]
+
+    if request.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status. Allowed: {allowed_statuses}"
+        )
+
+    doc_ref.update({
+        "status": request.status
+    })
+
+    return {
+        "message": "Product request status updated successfully",
+        "id": request_id,
+        "status": request.status
+    }
+
+
+# ==========================================
+# DELETE PRODUCT REQUEST - ADMIN
+# ==========================================
+
+@router.delete("/{request_id}")
+def delete_product_request(
+    request_id: str,
+    admin=Depends(verify_admin)
+):
+
+    doc_ref = db.collection("productRequests").document(request_id)
+
+    if not doc_ref.get().exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Product request not found"
+        )
+
+    doc_ref.delete()
+
+    return {
+        "message": "Product request deleted successfully",
+        "id": request_id
+    }
