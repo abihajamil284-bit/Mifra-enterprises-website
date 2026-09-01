@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
 from app.auth import verify_admin
+from app.email_service import send_submission_notification
+from app.rate_limit import rate_limit
 from datetime import datetime, timezone
 
 router = APIRouter(
@@ -27,7 +29,8 @@ class MessageStatusUpdate(BaseModel):
 # ==========================================
 
 @router.post("/")
-def create_contact_message(contact: ContactMessage):
+def create_contact_message(request: Request, contact: ContactMessage):
+    rate_limit(request)
 
     doc_ref = db.collection("contactMessages").document()
 
@@ -37,6 +40,19 @@ def create_contact_message(contact: ContactMessage):
     contact_data["created_at"] = datetime.now(timezone.utc)
 
     doc_ref.set(contact_data)
+
+    send_submission_notification(
+        subject="New contact message received",
+        message=(
+            f"A new contact message was submitted.\n\n"
+            f"Name: {contact.name}\n"
+            f"Email: {contact.email}\n"
+            f"Phone: {contact.phone or 'Not provided'}\n"
+            f"Subject: {contact.subject or 'Not provided'}\n"
+            f"Message: {contact.message}"
+        ),
+        recipient_email=str(contact.email),
+    )
 
     return {
         "message": "Contact message submitted successfully",

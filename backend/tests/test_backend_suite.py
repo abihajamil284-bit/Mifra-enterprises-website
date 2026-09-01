@@ -91,6 +91,8 @@ import app.firebase as firebase_mod
 from fastapi.testclient import TestClient
 from main import app
 from app import auth as auth_mod
+from app import email_service
+from app.rate_limit import _request_history
 
 
 # Patch all route modules to use the fake db instance
@@ -110,6 +112,197 @@ for module_name in [
     module.db = firebase_mod.db
 
 client = TestClient(app)
+
+
+def test_email_service_is_disabled_without_smtp_settings(monkeypatch):
+    monkeypatch.delenv('SMTP_HOST', raising=False)
+    monkeypatch.delenv('SMTP_FROM_EMAIL', raising=False)
+    monkeypatch.delenv('SMTP_TO_EMAIL', raising=False)
+    assert email_service.send_submission_notification('x', 'y') is False
+
+
+def test_email_service_handles_smtp_error(monkeypatch):
+    monkeypatch.setenv('SMTP_HOST', 'smtp.example.com')
+    monkeypatch.setenv('SMTP_PORT', '587')
+    monkeypatch.setenv('SMTP_USERNAME', 'user')
+    monkeypatch.setenv('SMTP_PASSWORD', 'pass')
+    monkeypatch.setenv('SMTP_FROM_EMAIL', 'from@example.com')
+    monkeypatch.setenv('SMTP_TO_EMAIL', 'to@example.com')
+
+    def fake_send(*args, **kwargs):
+        raise RuntimeError('smtp failed')
+
+    monkeypatch.setattr(email_service.smtplib, 'SMTP', lambda *a, **k: (_ for _ in ()).throw(RuntimeError('smtp failed')))
+    assert email_service.send_submission_notification('Subject', 'Body') is False
+
+
+def reset_rate_limits():
+    _request_history.clear()
+
+
+def test_rate_limit_allows_requests_below_limit(monkeypatch):
+    reset_rate_limits()
+    monkeypatch.setenv('RATE_LIMIT_REQUESTS', '3')
+    monkeypatch.setenv('RATE_LIMIT_WINDOW_SECONDS', '60')
+    seed_base_data()
+    payload = {
+        'product_id': 'prod_1',
+        'customer_name': 'Alice',
+        'customer_email': 'alice@example.com',
+        'customer_phone': '1234567890',
+        'quantity': 1,
+        'message': 'Need this product'
+    }
+    for _ in range(2):
+        response = client.post('/api/product-requests', json=payload)
+        assert response.status_code == 200
+    reset_rate_limits()
+
+
+def test_rate_limit_rejects_requests_over_limit(monkeypatch):
+    reset_rate_limits()
+    monkeypatch.setenv('RATE_LIMIT_REQUESTS', '2')
+    monkeypatch.setenv('RATE_LIMIT_WINDOW_SECONDS', '60')
+    seed_base_data()
+    payload = {
+        'service_id': 'svc_1',
+        'customer_name': 'Bob',
+        'customer_email': 'bob@example.com',
+        'customer_phone': '9876543210',
+        'message': 'Need a consultation'
+    }
+    response = client.post('/api/service-requests', json=payload)
+    assert response.status_code == 200
+    response = client.post('/api/service-requests', json=payload)
+    assert response.status_code == 200
+    response = client.post('/api/service-requests', json=payload)
+    assert response.status_code == 429
+    reset_rate_limits()
+
+
+def test_public_get_apis_still_work_after_rate_limit_integration():
+    reset_rate_limits()
+    seed_base_data()
+    assert client.get('/api/products').status_code == 200
+    assert client.get('/api/services').status_code == 200
+    assert client.get('/api/site-settings').status_code == 200
+    reset_rate_limits()
+
+
+def test_admin_apis_still_work_after_rate_limit_integration(monkeypatch):
+    reset_rate_limits()
+    monkeypatch.setenv('RATE_LIMIT_REQUESTS', '2')
+    monkeypatch.setenv('RATE_LIMIT_WINDOW_SECONDS', '60')
+    seed_base_data()
+    mock_valid_admin_token()
+    assert client.get('/api/admin/products', headers=auth_header()).status_code == 200
+    assert client.get('/api/admin/messages', headers=auth_header()).status_code == 200
+    reset_rate_limits()
+
+
+def test_product_request_public_creation_calls_email(monkeypatch):
+    reset_rate_limits()
+    seed_base_data()
+    called = {}
+
+    def fake_send(subject, message, recipient_email=None):
+        called['payload'] = {
+            'subject': subject,
+            'message': message,
+            'recipient_email': recipient_email,
+        }
+        return True
+
+    monkeypatch.setattr('app.product_request_routes.send_submission_notification', fake_send)
+    payload = {
+        'product_id': 'prod_1',
+        'customer_name': 'Alice',
+        'customer_email': 'alice@example.com',
+        'customer_phone': '1234567890',
+        'quantity': 2,
+        'message': 'Need this product'
+    }
+    response = client.post('/api/product-requests', json=payload)
+    assert response.status_code == 200
+    assert 'id' in response.json()
+    assert called['payload']['subject'] == 'New product request received'
+    assert 'Alice' in called['payload']['message']
+    reset_rate_limits()
+
+
+def test_service_request_public_creation_calls_email(monkeypatch):
+    seed_base_data()
+    called = {}
+
+    def fake_send(subject, message, recipient_email=None):
+        called['payload'] = {
+            'subject': subject,
+            'message': message,
+            'recipient_email': recipient_email,
+        }
+        return True
+
+    monkeypatch.setattr('app.service_request_routes.send_submission_notification', fake_send)
+    payload = {
+        'service_id': 'svc_1',
+        'customer_name': 'Bob',
+        'customer_email': 'bob@example.com',
+        'customer_phone': '9876543210',
+        'message': 'Need a consultation'
+    }
+    response = client.post('/api/service-requests', json=payload)
+    assert response.status_code == 200
+    assert 'id' in response.json()
+    assert called['payload']['subject'] == 'New service request received'
+    assert 'Bob' in called['payload']['message']
+
+
+def test_contact_create_message_calls_email(monkeypatch):
+    seed_base_data()
+    called = {}
+
+    def fake_send(subject, message, recipient_email=None):
+        called['payload'] = {
+            'subject': subject,
+            'message': message,
+            'recipient_email': recipient_email,
+        }
+        return True
+
+    monkeypatch.setattr('app.contact_routes.send_submission_notification', fake_send)
+    payload = {
+        'name': 'Mary Jane',
+        'email': 'mary@example.com',
+        'phone': '1112223333',
+        'subject': 'Question',
+        'message': 'Hello there'
+    }
+    response = client.post('/api/contact', json=payload)
+    assert response.status_code == 200
+    assert 'id' in response.json()
+    assert called['payload']['subject'] == 'New contact message received'
+    assert 'Mary Jane' in called['payload']['message']
+
+
+def test_product_request_public_creation_still_saves_firestore_even_if_email_fails(monkeypatch):
+    seed_base_data()
+
+    def fake_send(subject, message, recipient_email=None):
+        return False
+
+    monkeypatch.setattr('app.product_request_routes.send_submission_notification', fake_send)
+    payload = {
+        'product_id': 'prod_1',
+        'customer_name': 'Alice',
+        'customer_email': 'alice@example.com',
+        'customer_phone': '1234567890',
+        'quantity': 2,
+        'message': 'Need this product'
+    }
+    response = client.post('/api/product-requests', json=payload)
+    assert response.status_code == 200
+    assert 'id' in response.json()
+    assert firebase_mod.db.data['productRequests']
 
 
 def seed_base_data():

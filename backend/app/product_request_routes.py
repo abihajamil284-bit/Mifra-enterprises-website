@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
 from app.auth import verify_admin
+from app.email_service import send_submission_notification
+from app.rate_limit import rate_limit
 from datetime import datetime, timezone
 
 router = APIRouter(
@@ -28,10 +30,11 @@ class ProductRequestStatus(BaseModel):
 # ==========================================
 
 @router.post("/")
-def create_product_request(request: ProductRequest):
+def create_product_request(request: Request, payload: ProductRequest):
+    rate_limit(request)
 
     # Check whether requested product exists
-    product_ref = db.collection("products").document(request.product_id)
+    product_ref = db.collection("products").document(payload.product_id)
     product_doc = product_ref.get()
 
     if not product_doc.exists:
@@ -42,12 +45,26 @@ def create_product_request(request: ProductRequest):
 
     doc_ref = db.collection("productRequests").document()
 
-    request_data = request.model_dump()
+    request_data = payload.model_dump()
 
     request_data["status"] = "new"
     request_data["created_at"] = datetime.now(timezone.utc)
 
     doc_ref.set(request_data)
+
+    send_submission_notification(
+        subject="New product request received",
+        message=(
+            f"A new product request was submitted.\n\n"
+            f"Customer: {payload.customer_name}\n"
+            f"Email: {payload.customer_email}\n"
+            f"Phone: {payload.customer_phone}\n"
+            f"Product ID: {payload.product_id}\n"
+            f"Quantity: {payload.quantity}\n"
+            f"Message: {payload.message or 'None'}"
+        ),
+        recipient_email=str(payload.customer_email),
+    )
 
     return {
         "message": "Product request submitted successfully",

@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
 from app.auth import verify_admin
+from app.email_service import send_submission_notification
+from app.rate_limit import rate_limit
 from datetime import datetime, timezone
 
 router = APIRouter(
@@ -27,10 +29,11 @@ class ServiceRequestStatus(BaseModel):
 # ==========================================
 
 @router.post("/")
-def create_service_request(request: ServiceRequest):
+def create_service_request(request: Request, payload: ServiceRequest):
+    rate_limit(request)
 
     # Check whether requested service exists
-    service_ref = db.collection("services").document(request.service_id)
+    service_ref = db.collection("services").document(payload.service_id)
     service_doc = service_ref.get()
 
     if not service_doc.exists:
@@ -41,12 +44,25 @@ def create_service_request(request: ServiceRequest):
 
     doc_ref = db.collection("serviceRequests").document()
 
-    request_data = request.model_dump()
+    request_data = payload.model_dump()
 
     request_data["status"] = "new"
     request_data["created_at"] = datetime.now(timezone.utc)
 
     doc_ref.set(request_data)
+
+    send_submission_notification(
+        subject="New service request received",
+        message=(
+            f"A new service request was submitted.\n\n"
+            f"Customer: {payload.customer_name}\n"
+            f"Email: {payload.customer_email}\n"
+            f"Phone: {payload.customer_phone}\n"
+            f"Service ID: {payload.service_id}\n"
+            f"Message: {payload.message or 'None'}"
+        ),
+        recipient_email=str(payload.customer_email),
+    )
 
     return {
         "message": "Service request submitted successfully",
