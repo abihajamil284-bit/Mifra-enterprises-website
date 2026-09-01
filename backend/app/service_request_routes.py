@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
+from app.auth import verify_admin
 from datetime import datetime, timezone
 
 router = APIRouter(
@@ -16,6 +17,14 @@ class ServiceRequest(BaseModel):
     customer_phone: str
     message: str | None = None
 
+
+class ServiceRequestStatus(BaseModel):
+    status: str
+
+
+# ==========================================
+# CREATE SERVICE REQUEST - PUBLIC
+# ==========================================
 
 @router.post("/")
 def create_service_request(request: ServiceRequest):
@@ -45,8 +54,14 @@ def create_service_request(request: ServiceRequest):
     }
 
 
+# ==========================================
+# GET ALL SERVICE REQUESTS - ADMIN
+# ==========================================
+
 @router.get("/")
-def get_service_requests():
+def get_service_requests(
+    admin=Depends(verify_admin)
+):
 
     requests = []
 
@@ -64,8 +79,15 @@ def get_service_requests():
     return requests
 
 
+# ==========================================
+# GET SINGLE SERVICE REQUEST - ADMIN
+# ==========================================
+
 @router.get("/{request_id}")
-def get_service_request(request_id: str):
+def get_service_request(
+    request_id: str,
+    admin=Depends(verify_admin)
+):
 
     doc_ref = db.collection("serviceRequests").document(request_id)
     doc = doc_ref.get()
@@ -80,3 +102,73 @@ def get_service_request(request_id: str):
     request_data["id"] = doc.id
 
     return request_data
+
+
+# ==========================================
+# UPDATE SERVICE REQUEST STATUS - ADMIN
+# ==========================================
+
+@router.put("/{request_id}")
+def update_service_request(
+    request_id: str,
+    request: ServiceRequestStatus,
+    admin=Depends(verify_admin)
+):
+
+    doc_ref = db.collection("serviceRequests").document(request_id)
+
+    if not doc_ref.get().exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Service request not found"
+        )
+
+    allowed_statuses = [
+        "new",
+        "contacted",
+        "in_progress",
+        "completed",
+        "cancelled"
+    ]
+
+    if request.status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid status. Allowed: {allowed_statuses}"
+        )
+
+    doc_ref.update({
+        "status": request.status
+    })
+
+    return {
+        "message": "Service request status updated successfully",
+        "id": request_id,
+        "status": request.status
+    }
+
+
+# ==========================================
+# DELETE SERVICE REQUEST - ADMIN
+# ==========================================
+
+@router.delete("/{request_id}")
+def delete_service_request(
+    request_id: str,
+    admin=Depends(verify_admin)
+):
+
+    doc_ref = db.collection("serviceRequests").document(request_id)
+
+    if not doc_ref.get().exists:
+        raise HTTPException(
+            status_code=404,
+            detail="Service request not found"
+        )
+
+    doc_ref.delete()
+
+    return {
+        "message": "Service request deleted successfully",
+        "id": request_id
+    }

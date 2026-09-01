@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from app.firebase import db
+from app.auth import verify_admin
 
 router = APIRouter(
     prefix="/api/site-settings",
@@ -23,8 +24,13 @@ class SiteSettings(BaseModel):
 SETTINGS_ID = "main"
 
 
+# ==========================================
+# GET SITE SETTINGS - PUBLIC
+# ==========================================
+
 @router.get("/")
 def get_site_settings():
+
     doc_ref = db.collection("siteSettings").document(SETTINGS_ID)
     doc = doc_ref.get()
 
@@ -40,8 +46,16 @@ def get_site_settings():
     return settings
 
 
+# ==========================================
+# UPDATE SITE SETTINGS - ADMIN
+# ==========================================
+
 @router.put("/")
-def update_site_settings(settings: SiteSettings):
+def update_site_settings(
+    settings: SiteSettings,
+    admin=Depends(verify_admin)
+):
+
     doc_ref = db.collection("siteSettings").document(SETTINGS_ID)
 
     settings_data = settings.model_dump()
