@@ -1,7 +1,9 @@
 import uuid
 from collections import defaultdict
+from pathlib import Path
 
 import firebase_admin
+import pytest
 from firebase_admin import firestore
 
 
@@ -93,6 +95,11 @@ from main import app
 from app import auth as auth_mod
 from app import email_service
 from app.rate_limit import _request_history
+from app import admin_routes
+from app import firebase as firebase_module
+from app.product_routes import Product
+from app.service_routes import Service
+from app.product_request_routes import ProductRequest
 
 
 # Patch all route modules to use the fake db instance
@@ -112,6 +119,7 @@ for module_name in [
     module.db = firebase_mod.db
 
 client = TestClient(app)
+safe_client = TestClient(app, raise_server_exceptions=False)
 
 
 def test_email_service_is_disabled_without_smtp_settings(monkeypatch):
@@ -527,7 +535,9 @@ def test_admin_no_token_rejected():
 def test_admin_invalid_token_rejected():
     seed_base_data()
     mock_valid_admin_token()
-    auth_mod.auth.verify_id_token = lambda token: (_ for _ in ()).throw(ValueError('bad token'))
+    auth_mod.auth.verify_id_token = lambda token: (_ for _ in ()).throw(
+        auth_mod.auth.InvalidIdTokenError('bad token')
+    )
     firebase_admin.auth.verify_id_token = auth_mod.auth.verify_id_token
     response = client.get('/api/admin/test', headers=auth_header('bad-token'))
     assert response.status_code == 401
@@ -749,3 +759,102 @@ def test_invalid_id_checked_for_admin_product():
     response = client.get('/api/admin/products/does-not-exist', headers=auth_header())
     # endpoint is list only; invalid ID check is expected to be 404 on detail/update/delete flows
     assert response.status_code == 405
+
+
+def test_cors_allows_configured_development_origin():
+    response = client.get('/api/health', headers={'Origin': 'http://localhost:3000'})
+    assert response.status_code == 200
+    assert response.headers['access-control-allow-origin'] == 'http://localhost:3000'
+
+
+def test_requirements_declare_runtime_dependencies():
+    requirements = Path(__file__).parents[1].joinpath('requirements.txt').read_text(encoding='utf-16')
+    assert 'firebase-admin' in requirements
+    assert 'email-validator' in requirements
+    assert 'fastapi' in requirements
+    assert 'uvicorn' in requirements
+    assert 'pydantic[email]' in requirements
+
+
+def test_firebase_supports_environment_service_account(monkeypatch):
+    certificate_calls = []
+    monkeypatch.setenv('FIREBASE_SERVICE_ACCOUNT_JSON', '{"project_id":"test-project"}')
+    monkeypatch.setattr(firebase_module, '_cred_path', Path('missing-service-account.json'))
+    monkeypatch.setattr(
+        firebase_module.credentials,
+        'Certificate',
+        lambda value: certificate_calls.append(value) or 'credential'
+    )
+    assert firebase_module._get_credentials() == 'credential'
+    assert certificate_calls == [{'project_id': 'test-project'}]
+
+
+def test_firebase_missing_configuration_does_not_expose_secret(monkeypatch):
+    monkeypatch.delenv('FIREBASE_SERVICE_ACCOUNT_JSON', raising=False)
+    monkeypatch.setattr(firebase_module, '_cred_path', Path('missing-service-account.json'))
+    with pytest.raises(RuntimeError, match='configuration is missing'):
+        firebase_module._get_credentials()
+
+
+def test_firebase_internal_auth_failure_returns_500():
+    seed_base_data()
+
+    def fail_auth(token):
+        raise RuntimeError('firebase unavailable')
+
+    auth_mod.auth.verify_id_token = fail_auth
+    response = client.get('/api/admin/test', headers=auth_header('admin-token'))
+    assert response.status_code == 500
+    assert response.json() == {'detail': 'Authentication service unavailable'}
+
+
+def test_admin_test_does_not_disclose_identity():
+    seed_base_data()
+    mock_valid_admin_token()
+    response = client.get('/api/admin/test', headers=auth_header())
+    assert response.status_code == 200
+    assert response.json() == {'message': 'Admin authentication successful'}
+    assert 'uid' not in response.text
+    assert 'email' not in response.text
+
+
+def test_prices_reject_negative_values_and_allow_zero():
+    Product(name='Free', description='Free product', price=0, category='Furniture')
+    Service(name='Free', description='Free service', price=0, category='Design')
+    with pytest.raises(ValueError):
+        Product(name='Invalid', description='Invalid product', price=-1, category='Furniture')
+    with pytest.raises(ValueError):
+        Service(name='Invalid', description='Invalid service', price=-1, category='Design')
+
+
+def test_product_request_quantity_must_be_positive():
+    with pytest.raises(ValueError):
+        ProductRequest(
+            product_id='prod_1', customer_name='Alice', customer_email='alice@example.com',
+            customer_phone='123', quantity=0
+        )
+    with pytest.raises(ValueError):
+        ProductRequest(
+            product_id='prod_1', customer_name='Alice', customer_email='alice@example.com',
+            customer_phone='123', quantity=-1
+        )
+    assert ProductRequest(
+        product_id='prod_1', customer_name='Alice', customer_email='alice@example.com',
+        customer_phone='123', quantity=1
+    ).quantity == 1
+
+
+def test_unexpected_route_exception_returns_safe_500(monkeypatch):
+    seed_base_data()
+    mock_valid_admin_token()
+
+    def fail_collection(name):
+        raise RuntimeError('internal firestore detail')
+
+    failing_db = type('FailingDb', (), {'collection': staticmethod(fail_collection)})()
+    monkeypatch.setattr(admin_routes, 'db', failing_db)
+    response = safe_client.get('/api/admin/dashboard', headers=auth_header())
+    assert response.status_code == 500
+    assert response.json() == {'detail': 'Internal server error'}
+    assert 'internal firestore detail' not in response.text
+    assert 'Traceback' not in response.text

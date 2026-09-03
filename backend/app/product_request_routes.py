@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.firebase import db
 from app.auth import verify_admin
 from app.email_service import send_submission_notification
@@ -17,7 +17,7 @@ class ProductRequest(BaseModel):
     customer_name: str
     customer_email: EmailStr
     customer_phone: str
-    quantity: int
+    quantity: int = Field(ge=1)
     message: str | None = None
 
 

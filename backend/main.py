@@ -1,7 +1,9 @@
 import os
+import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.product_routes import router as product_router
 from app.service_routes import router as service_router
@@ -16,6 +18,17 @@ app = FastAPI(
     title="Mifra Enterprises API",
     version="1.0.0",
 )
+
+logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(Exception)
+async def handle_unexpected_exception(request: Request, exc: Exception):
+    logger.exception("Unhandled backend exception for %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"}
+    )
 
 cors_origins = os.getenv(
     "CORS_ORIGINS",

@@ -1,15 +1,21 @@
+import logging
+
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from firebase_admin import auth
 from app.firebase import db
 
 
-security = HTTPBearer()
+logger = logging.getLogger(__name__)
+security = HTTPBearer(auto_error=False)
 
 
 def verify_admin(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    credentials: HTTPAuthorizationCredentials | None = Depends(security)
 ):
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
     token = credentials.credentials
 
     try:
@@ -36,11 +42,14 @@ def verify_admin(
 
         return decoded_token
 
-    except HTTPException:
-        raise
-
-    except Exception:
+    except (auth.InvalidIdTokenError, auth.ExpiredIdTokenError, auth.RevokedIdTokenError):
         raise HTTPException(
             status_code=401,
             detail="Invalid or expired token"
         )
+    except HTTPException:
+        raise
+
+    except Exception:
+        logger.exception("Unexpected failure while verifying admin access")
+        raise HTTPException(status_code=500, detail="Authentication service unavailable")

@@ -174,6 +174,9 @@ None.
 - `featured: boolean` (if present in stored data)
 - additional stored fields may be present
 
+### Price rule
+The current product and service schemas use `ge=0`, so zero-priced products and services are intentionally supported. Negative prices are rejected.
+
 ### Public visibility rule
 Only products with `isActive != false` are returned.
 

@@ -36,9 +36,7 @@ def get_stock_status(stock_quantity: int, low_stock_threshold: int) -> str:
 @router.get("/test")
 def admin_test(admin=Depends(verify_admin)):
     return {
-        "message": "Admin authentication successful!",
-        "uid": admin["uid"],
-        "email": admin.get("email")
+        "message": "Admin authentication successful"
     }
 
 
