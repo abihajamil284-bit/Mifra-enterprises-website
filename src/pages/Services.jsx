@@ -112,6 +112,16 @@ function Services() {
         </div>
       </section>
 
+      <section className="bg-[#1a1a1a] py-16 text-white sm:py-20" aria-labelledby="services-cta-heading">
+        <div className="mifra-container flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
+          <div className="max-w-2xl">
+            <h2 id="services-cta-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">Need a Custom Solution?</h2>
+            <p className="mt-4 text-base leading-7 text-[#E0E0E0]">Talk to our team and let us help you find the right technology solution for your business.</p>
+          </div>
+          <Link to="/contact" className="mifra-btn-primary min-h-12 shrink-0">Request a Service</Link>
+        </div>
+      </section>
+
       <section className="bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="service-list-heading">
         <div className="mifra-container">
           <div className="mb-10 max-w-2xl">
@@ -161,15 +171,6 @@ function Services() {
         </div>
       </section>
 
-      <section className="bg-[#1a1a1a] py-16 text-white sm:py-20" aria-labelledby="services-cta-heading">
-        <div className="mifra-container flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-          <div className="max-w-2xl">
-            <h2 id="services-cta-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">Need a Custom Solution?</h2>
-            <p className="mt-4 text-base leading-7 text-[#E0E0E0]">Talk to our team and let us help you find the right technology solution for your business.</p>
-          </div>
-          <Link to="/contact" className="mifra-btn-primary min-h-12 shrink-0">Request a Service</Link>
-        </div>
-      </section>
     </div>
   )
 }
