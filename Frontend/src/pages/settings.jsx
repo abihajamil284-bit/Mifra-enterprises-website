@@ -1,9 +1,4 @@
-import { useState } from 'react'
-
-
-function Settings() {
-	return(
-       <h1>Settings</h1>
-	)
-}
-export default Settings
+import AdminLayout from "../components/AdminLayout";
+import { FormField, PageHeader } from "../components/AdminUI";
+function Settings() { return <AdminLayout><PageHeader title="Settings" description="Manage company information, branding and social presence" /><form className="settings-form" onSubmit={(event) => event.preventDefault()}><section className="settings-section"><div className="section-heading"><h2>Company Information</h2><p>Core details shown across MIFRA customer communications.</p></div><div className="form-grid"><FormField label="Company Name"><input defaultValue="MIFRA Enterprises" /></FormField><FormField label="Email" type="email" placeholder="admin@mifra.com" /><FormField label="Phone" placeholder="+92 300 1234567" /><FormField label="Address" placeholder="Office address" /></div></section><section className="settings-section"><div className="section-heading"><h2>Branding</h2><p>Keep your identity consistent across the platform.</p></div><div className="form-grid"><label className="upload-field"><span>Company Logo</span><div className="upload-preview"><strong>M</strong><span>Upload logo<br /><small>PNG, JPG or SVG</small></span><input type="file" accept="image/*" /></div></label><FormField label="About Text" textarea placeholder="Tell customers about MIFRA Enterprises." /></div></section><section className="settings-section"><div className="section-heading"><h2>Social Links</h2><p>Optional public contact channels.</p></div><div className="form-grid"><FormField label="Facebook" placeholder="https://facebook.com/..." /><FormField label="Instagram" placeholder="https://instagram.com/..." /><FormField label="WhatsApp" placeholder="https://wa.me/..." /></div></section><div className="form-actions settings-actions"><button className="button button-secondary" type="button">Cancel</button><button className="button button-primary" type="submit">Save Changes</button></div></form></AdminLayout>; }
+export default Settings;

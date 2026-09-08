@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import UserLOgOut from "../assets/Log-Out-userpng.png"
-import { useNavigate,Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 
 const DashboardIcon = () => (
@@ -64,13 +63,15 @@ const LogoutIcon = () => (
   </svg>
 );
 
-function Sidebar() {
- const navigate = useNavigate();
- const LogoutBtn = () =>{
-    navigate("/")
-  }
+function Sidebar({ isOpen, onClose, onLogout }) {
+
+
+
+
 	return(
-    <aside className="sidebar">
+    <>
+      <button className={`sidebar-overlay ${isOpen ? "is-visible" : ""}`} aria-label="Close navigation menu" onClick={onClose} />
+    <aside className={`sidebar ${isOpen ? "is-open" : ""}`}>
       <div className="sidebar-top">
         <div className="logo-area">
           <div className="logo-icon-bg">
@@ -80,45 +81,33 @@ function Sidebar() {
             <div className="logo-main">MIFRA</div>
             <div className="logo-sub">ENTERPRISES</div>
           </div>
+          <button className="sidebar-close" type="button" aria-label="Close navigation menu" onClick={onClose}>×</button>
         </div>
         <nav className="nav-items">
-          <Link to="/admin" className="nav-dashboard active">
-            <span className="active-bar"></span>
+          <NavLink end to="/admin" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <DashboardIcon />
-            <span className="nav-label">
-              Dashboard
-            </span>
-          </Link>
-          <Link to="/admin/products" className="nav-dashboard">
+            <span className="nav-label">Dashboard</span>
+          </NavLink>
+          <NavLink to="/admin/products" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <ProductsIcon />
-            <span className="nav-label">
-              Products
-            </span>
-          </Link>
-          <Link to="/admin/services" className="nav-dashboard">
+            <span className="nav-label">Products</span>
+          </NavLink>
+          <NavLink to="/admin/services" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <ServicesIcon />
-            <span className="nav-label">
-              Services
-            </span>
-          </Link>
-          <Link to="/admin/requests" className="nav-dashboard customer-request">
+            <span className="nav-label">Services</span>
+          </NavLink>
+          <NavLink to="/admin/requests" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <RequestsIcon />
-            <span className="nav-label">
-              Customer Requests
-            </span>
-          </Link>
-          <Link to="/admin/messages" className="nav-dashboard">
+            <span className="nav-label">Requests</span>
+          </NavLink>
+          <NavLink to="/admin/messages" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <MessagesIcon />
-            <span className="nav-label">
-              Contact Messages
-            </span>
-          </Link>
-          <Link to="/admin/settings" className="nav-dashboard">
+            <span className="nav-label">Messages</span>
+          </NavLink>
+          <NavLink to="/admin/settings" className={({ isActive }) => `nav-dashboard ${isActive ? "active" : ""}`} onClick={onClose}>
             <SettingsIcon />
-            <span className="nav-label">
-              Site Settings
-            </span>
-          </Link>
+            <span className="nav-label">Settings</span>
+          </NavLink>
         </nav>
       </div>
       <div className="sidebar-bottom">
@@ -137,12 +126,14 @@ function Sidebar() {
             </div>
           </div>
         </div>
-        <button className="btn-logout" onClick={LogoutBtn}>
+        <button className="btn-logout" type="button" onClick={onLogout}>
           <LogoutIcon />
           <span>Logout</span>
         </button>
       </div>
     </aside>
+
+    </>
 	)
 }
 export default Sidebar

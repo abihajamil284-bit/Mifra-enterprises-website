@@ -1,9 +1,8 @@
-import { useState } from 'react'
-
-
-function Services() {
-	return(
-       <h1>Services</h1>
-	)
-}
-export default Services
+import { useState } from "react";
+import { FaEdit, FaPlus, FaTrash } from "react-icons/fa";
+import AdminLayout from "../components/AdminLayout";
+import { DataTable, FormField, Modal, PageHeader, SearchFilters, Select, Toggle } from "../components/AdminUI";
+const services = [["Network Installation", "Infrastructure", "$750", "1", true, true], ["IT Support & Maintenance", "Support", "$350", "2", true, false], ["Cybersecurity Assessment", "Security", "$1,200", "3", true, true], ["Cloud Migration", "Cloud", "$2,000", "4", false, false]];
+function ServiceForm({ onClose }) { return <Modal title="Add Service" onClose={onClose}><form className="admin-form" onSubmit={(event) => { event.preventDefault(); onClose(); }}><div className="form-grid"><FormField label="Name" placeholder="Service name" /><FormField label="Price" type="number" placeholder="0.00" /><FormField label="Category"><select defaultValue=""><option value="" disabled>Select a category</option><option>Infrastructure</option><option>Support</option><option>Security</option></select></FormField><FormField label="Image" type="file" /><FormField label="Display Order" type="number" placeholder="1" /></div><FormField label="Description" textarea placeholder="Brief service description" /><div className="toggle-row"><Toggle label="Active" /><Toggle label="Featured" /></div><div className="form-actions"><button className="button button-secondary" type="button" onClick={onClose}>Cancel</button><button className="button button-primary" type="submit">Save Service</button></div></form></Modal>; }
+function Services() { const [showForm, setShowForm] = useState(false); return <AdminLayout><PageHeader title="Services" description="Manage your business services" action={<button className="button button-primary" type="button" onClick={() => setShowForm(true)}><FaPlus />Add Service</button>} /><SearchFilters placeholder="Search services..."><Select label="Category"><option>Infrastructure</option><option>Support</option><option>Security</option></Select><Select label="Status"><option>Active</option><option>Inactive</option></Select></SearchFilters><DataTable columns={["Service", "Description", "Price", "Category", "Active", "Featured", "Order", "Actions"]}>{services.map(([name, category, price, order, active, featured]) => <tr key={name}><td><strong>{name}</strong></td><td>Professional {name.toLowerCase()} for enterprise operations.</td><td>{price}</td><td>{category}</td><td><span className={`status-badge ${active ? "status-completed" : "status-cancelled"}`}>{active ? "Active" : "Inactive"}</span></td><td>{featured ? <span className="featured-mark">Featured</span> : "—"}</td><td>{order}</td><td><div className="table-actions"><button className="icon-button" aria-label={`Edit ${name}`}><FaEdit /></button><button className="icon-button danger-icon" aria-label={`Delete ${name}`}><FaTrash /></button></div></td></tr>)}</DataTable>{showForm && <ServiceForm onClose={() => setShowForm(false)} />}</AdminLayout>; }
+export default Services;

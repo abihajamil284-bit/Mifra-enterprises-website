@@ -1,9 +1,8 @@
-import { useState } from 'react'
-
-
-function Products() {
-	return(
-       <h1>Products</h1>
-	)
-}
-export default Products
+import { useState } from "react";
+import { FaEdit, FaEye, FaPlus, FaTrash } from "react-icons/fa";
+import AdminLayout from "../components/AdminLayout";
+import { DataTable, FormField, Modal, PageHeader, SearchFilters, Select, StatusBadge, Toggle } from "../components/AdminUI";
+const products = [["Cisco Catalyst 9300", "Networking", "$2,450", "36", "In Stock", true], ["Dell PowerEdge R760", "Servers", "$5,800", "8", "Limited Stock", true], ["HP LaserJet Pro", "Printers", "$490", "0", "Out of Stock", false], ["TP-Link ER7206 Router", "Networking", "$185", "24", "In Stock", false]];
+function ProductForm({ onClose }) { return <Modal title="Add Product" onClose={onClose}><form className="admin-form" onSubmit={(event) => { event.preventDefault(); onClose(); }}><div className="form-grid"><FormField label="Name" placeholder="Product name" /><FormField label="Price" type="number" placeholder="0.00" /><FormField label="Category"><select defaultValue=""><option value="" disabled>Select a category</option><option>Networking</option><option>Servers</option><option>Printers</option></select></FormField><FormField label="Image" type="file" /><FormField label="Stock Quantity" type="number" placeholder="0" /><FormField label="Low Stock Threshold" type="number" placeholder="5" /></div><FormField label="Description" textarea placeholder="Brief product description" /><div className="toggle-row"><Toggle label="Active" /><Toggle label="Featured" /></div><div className="form-actions"><button className="button button-secondary" type="button" onClick={onClose}>Cancel</button><button className="button button-primary" type="submit">Save Product</button></div></form></Modal>; }
+function Products() { const [showForm, setShowForm] = useState(false); return <AdminLayout><PageHeader title="Products" description="Manage your product catalogue" action={<button className="button button-primary" type="button" onClick={() => setShowForm(true)}><FaPlus />Add Product</button>} /><SearchFilters placeholder="Search products..."><Select label="Category"><option>Networking</option><option>Servers</option><option>Printers</option></Select><Select label="Availability"><option>In Stock</option><option>Limited Stock</option><option>Out of Stock</option></Select><Select label="Sort"><option>Newest</option><option>Name</option><option>Price</option></Select></SearchFilters><DataTable columns={["Product", "Category", "Price", "Stock", "Status", "Featured", "Actions"]} label="Showing 4 sample products">{products.map(([name, category, price, stock, status, featured]) => <tr key={name}><td><strong>{name}</strong></td><td>{category}</td><td>{price}</td><td>{stock}</td><td><StatusBadge status={status} kind="stock" /></td><td>{featured ? <span className="featured-mark">Featured</span> : "—"}</td><td><div className="table-actions"><button className="icon-button" aria-label={`View ${name}`}><FaEye /></button><button className="icon-button" aria-label={`Edit ${name}`}><FaEdit /></button><button className="icon-button danger-icon" aria-label={`Delete ${name}`}><FaTrash /></button></div></td></tr>)}</DataTable>{showForm && <ProductForm onClose={() => setShowForm(false)} />}</AdminLayout>; }
+export default Products;

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import '../App.css'
 function BoxIcon() {
   return (
@@ -100,7 +99,7 @@ function ServiceIcon() {
   );
 }
 
-function MetricCard({ title, value, icon }) {
+function MetricCard({ title, value, icon, isLoading }) {
   return (
     <div className="metric-card">
       <div className="metric-header">
@@ -111,48 +110,53 @@ function MetricCard({ title, value, icon }) {
           {icon}
         </div>
       </div>
-      <div className="metric-value">
-        {value}
-      </div>
+      <div className={`metric-value ${isLoading ? "metric-skeleton" : ""}`}>{isLoading ? "" : value}</div>
     </div>
   );
 }
 
 
-function Metrics() {
+function Metrics({ metrics, isLoading }) {
+	const values = metrics || {};
 	return(
       <div className="metrics-grid">
         <div className="metrics-row">
           <MetricCard
             title="Total Active Products"
-            value="142"
+            value={values.totalActiveProducts}
+            isLoading={isLoading}
             icon={<BoxIcon />}
           />
           <MetricCard
             title="In-Stock Products"
-            value="98"
+            value={values.inStockProducts}
+            isLoading={isLoading}
             icon={<BoxIcon />}
           />
           <MetricCard
             title="Low Stock Alert"
-            value="12"
+            value={values.lowStockProducts}
+            isLoading={isLoading}
             icon={<AlertIcon />}
           />
         </div>
         <div className="metrics-row">
           <MetricCard
             title="Out of Stock Products"
-            value="7"
+            value={values.outOfStockProducts}
+            isLoading={isLoading}
             icon={<XCircleIcon />}
           />
           <MetricCard
             title="Pending Product Inquiries"
-            value="23"
+            value={values.pendingProductRequests}
+            isLoading={isLoading}
             icon={<InquiryIcon />}
           />
           <MetricCard
             title="Pending Service Inquiries"
-            value="15"
+            value={values.pendingServiceRequests}
+            isLoading={isLoading}
             icon={<ServiceIcon />}
           />
         </div>

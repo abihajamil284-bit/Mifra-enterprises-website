@@ -1,9 +1,8 @@
-import { useState } from 'react'
-
-
-function Requests() {
-	return(
-       <h1>Requests</h1>
-	)
-}
-export default Requests
+import { useState } from "react";
+import { FaEye } from "react-icons/fa";
+import AdminLayout from "../components/AdminLayout";
+import { DataTable, FormField, Modal, PageHeader, SearchFilters, Select, StatusBadge } from "../components/AdminUI";
+const requests = [["#REQ-0489", "Al-Fatah Tech Ltd", "Product", "Cisco Catalyst 9300", 4, "Oct 24, 2026", "New"], ["#REQ-0488", "Tech Solutions", "Product", "Dell PowerEdge R760", 2, "Oct 23, 2026", "In Progress"], ["#REQ-0487", "Mifra Systems", "Service", "Network Installation", 1, "Oct 22, 2026", "Contacted"], ["#REQ-0486", "Global IT Services", "Product", "HP LaserJet Pro", 3, "Oct 21, 2026", "Completed"]];
+function Details({ request, onClose }) { return <Modal title={`Request ${request[0]}`} onClose={onClose}><div className="detail-grid"><div><span>Customer</span><strong>{request[1]}</strong></div><div><span>Email</span><strong>contact@customer.com</strong></div><div><span>Phone</span><strong>+92 300 1234567</strong></div><div><span>Requested item</span><strong>{request[3]}</strong></div><div><span>Quantity</span><strong>{request[4]}</strong></div><div><span>Date</span><strong>{request[5]}</strong></div></div><FormField label="Customer message" textarea placeholder="We require a quotation and delivery timeline." /><FormField label="Internal notes" textarea placeholder="Add a private note" /><div className="form-actions"><select aria-label="Update request status" defaultValue={request[6]}><option>New</option><option>Contacted</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select><button className="button button-primary" type="button" onClick={onClose}>Update Status</button></div></Modal>; }
+function Requests() { const [activeTab, setActiveTab] = useState("All"); const [selected, setSelected] = useState(null); return <AdminLayout><PageHeader title="Requests" description="Review and manage customer product and service requests" /><div className="tabs" role="tablist">{["All", "Product Requests", "Service Requests"].map((tab) => <button key={tab} className={activeTab === tab ? "tab active" : "tab"} type="button" onClick={() => setActiveTab(tab)} role="tab" aria-selected={activeTab === tab}>{tab}</button>)}</div><SearchFilters placeholder="Search requests..."><Select label="Status"><option>New</option><option>Contacted</option><option>In Progress</option><option>Completed</option></Select><label className="filter-select"><span>Date</span><input type="date" aria-label="Filter by date" /></label></SearchFilters><DataTable columns={["Request ID", "Customer", "Type", "Product / Service", "Quantity", "Date", "Status", "Actions"]}>{requests.map((request) => <tr key={request[0]}><td><strong>{request[0]}</strong></td><td>{request[1]}</td><td>{request[2]}</td><td>{request[3]}</td><td>{request[4]}</td><td>{request[5]}</td><td><StatusBadge status={request[6]} /></td><td><button className="button button-outline compact-button" type="button" onClick={() => setSelected(request)}><FaEye />View</button></td></tr>)}</DataTable>{selected && <Details request={selected} onClose={() => setSelected(null)} />}</AdminLayout>; }
+export default Requests;

@@ -1,28 +1,56 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+
+const getAuthErrorMessage = (error) => {
+  switch (error.code) {
+    case "auth/invalid-email":
+      return "Please enter a valid email address.";
+    case "auth/invalid-credential":
+      return "Incorrect email or password.";
+    case "auth/user-disabled":
+      return "This account has been disabled.";
+    case "auth/too-many-requests":
+      return "Too many failed attempts. Please try again later.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your connection and try again.";
+    default:
+      return "Unable to sign in. Please try again.";
+  }
+};
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setError("Please enter username and password.");
+    if (isLoading) return;
+
+    if (!email || !password) {
+      setError("Please enter email and password.");
       return;
     }
 
-    if (username === "admin" && password === "admin123") {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       navigate("/admin");
-    } else {
-      setError("Incorrect username or password.");
+    } catch (firebaseError) {
+      setError(getAuthErrorMessage(firebaseError));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -76,25 +104,28 @@ const Login = () => {
           </div>
           <form onSubmit={handleLogin}>
             <div className="login-input-group">
-              <label>Username</label>
+              <label htmlFor="admin-email">Email</label>
               <div className="login-input-wrapper">
                 <FaUser className="login-input-icon" />
                 <input
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
+                  id="admin-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
                   onChange={(e) => {
-                    setUsername(e.target.value);
+                    setEmail(e.target.value);
                     setError("");
                   }}
+                  disabled={isLoading}
                 />
               </div>
             </div>
             <div className="login-input-group">
-              <label>Password</label>
+              <label htmlFor="admin-password">Password</label>
               <div className="login-input-wrapper">
                 <FaLock className="login-input-icon" />
                 <input
+                  id="admin-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
@@ -109,6 +140,8 @@ const Login = () => {
                   onClick={() =>
                     setShowPassword(!showPassword)
                   }
+                  disabled={isLoading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
@@ -123,8 +156,9 @@ const Login = () => {
             <button
               type="submit"
               className="login-button"
+              disabled={isLoading}
             >
-              Sign In
+              {isLoading ? "Signing In..." : "Sign In"}
             </button>
           </form>
           <div className="login-security">
@@ -132,15 +166,6 @@ const Login = () => {
             <span>
               Secure administrator access
             </span>
-          </div>
-          <div className="login-demo">
-            <span>Demo Credentials</span>
-            <p>
-              Username: <strong>admin</strong>
-            </p>
-            <p>
-              Password: <strong>admin123</strong>
-            </p>
           </div>
         </div>
       </div>

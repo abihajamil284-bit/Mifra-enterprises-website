@@ -1,11 +1,22 @@
-import { useState } from 'react'
+import { useLocation } from "react-router-dom";
 import AdminLogo from "../assets/AdminPhoto.png"
 
-function TopBar() {
+const pageTitles = {
+  "/admin": "Dashboard Overview",
+  "/admin/products": "Products",
+  "/admin/services": "Services",
+  "/admin/requests": "Customer Requests",
+  "/admin/messages": "Contact Messages",
+  "/admin/settings": "Site Settings",
+};
+
+function TopBar({ onMenuToggle, onLogout }) {
+	const { pathname } = useLocation();
 	return(
        <header className="top-bar">
-      <div className="page-title">
-        Dashboard Overview
+      <div className="topbar-heading">
+        <button className="menu-toggle" type="button" aria-label="Open navigation menu" onClick={onMenuToggle}>☰</button>
+        <div className="page-title">{pageTitles[pathname] || "Administration"}</div>
       </div>
       <div className="top-bar-right">
         <div className="search-container">
@@ -29,9 +40,9 @@ function TopBar() {
             />
           </svg>
 
-          <span>Search inquiries...</span>
+          <input type="search" aria-label="Search admin records" placeholder="Search inquiries..." />
         </div>
-        <div className="bell-container">
+        <button className="bell-container" type="button" aria-label="View 4 notifications">
           <svg
             className="bell"
             viewBox="0 0 18 18"
@@ -51,7 +62,7 @@ function TopBar() {
             />
           </svg>
           <span className="red-badge">4</span>
-        </div>
+        </button>
         <div className="topbar-divider"></div>
         <div className="topbar-user-profile">
           <span className="topbar-user-name">
@@ -63,6 +74,7 @@ function TopBar() {
             className="topbar-user-avatar"
           />
         </div>
+        <button className="topbar-logout" type="button" onClick={onLogout}>Logout</button>
       </div>
     </header>
 	)

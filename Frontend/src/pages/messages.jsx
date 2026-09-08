@@ -1,10 +1,8 @@
-import { useState } from 'react'
-import Sidebar from "../components/Sidebar.jsx"
-import TopBar from "../components/TopBar.jsx"
-
-function Message() {
-	return(
-       <h2>Message</h2>
-	)
-}
-export default Message
+import { useState } from "react";
+import { FaArchive, FaEye, FaReply } from "react-icons/fa";
+import AdminLayout from "../components/AdminLayout";
+import { DataTable, FormField, Modal, PageHeader, SearchFilters, Select, StatusBadge } from "../components/AdminUI";
+const messages = [["Ayesha Khan", "ayesha@alfatah.com", "Enterprise network quotation", "Oct 24, 2026", "New"], ["Bilal Ahmed", "bilal@techsolutions.com", "Server availability", "Oct 23, 2026", "Read"], ["Sarah Malik", "sarah@globalit.com", "Support service inquiry", "Oct 22, 2026", "Replied"], ["Umair Ali", "umair@digitalworld.com", "Partnership proposal", "Oct 19, 2026", "Archived"]];
+function Details({ message, onClose }) { return <Modal title="Message details" onClose={onClose}><div className="detail-grid"><div><span>Name</span><strong>{message[0]}</strong></div><div><span>Email</span><strong>{message[1]}</strong></div><div><span>Phone</span><strong>+92 300 1234567</strong></div><div><span>Date</span><strong>{message[3]}</strong></div><div><span>Subject</span><strong>{message[2]}</strong></div><div><span>Status</span><StatusBadge status={message[4]} kind="message" /></div></div><FormField label="Message" textarea placeholder="We would like to request a detailed quotation for an enterprise network deployment." /><div className="form-actions"><button className="button button-secondary" type="button"><FaArchive />Archive</button><button className="button button-primary" type="button" onClick={onClose}><FaReply />Reply</button></div></Modal>; }
+function Message() { const [selected, setSelected] = useState(null); return <AdminLayout><PageHeader title="Messages" description="Customer inquiries and contact messages" /><SearchFilters placeholder="Search messages..."><Select label="Status"><option>New</option><option>Read</option><option>Replied</option><option>Archived</option></Select></SearchFilters><DataTable columns={["Sender", "Email", "Subject", "Date", "Status", "Actions"]}>{messages.map((message) => <tr key={message[1]}><td><strong>{message[0]}</strong></td><td>{message[1]}</td><td>{message[2]}</td><td>{message[3]}</td><td><StatusBadge status={message[4]} kind="message" /></td><td><button className="button button-outline compact-button" type="button" onClick={() => setSelected(message)}><FaEye />View</button></td></tr>)}</DataTable>{selected && <Details message={selected} onClose={() => setSelected(null)} />}</AdminLayout>; }
+export default Message;
