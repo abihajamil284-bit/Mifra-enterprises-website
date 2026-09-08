@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   FiArrowRight,
+  FiChevronLeft,
+  FiChevronRight,
   FiCheckCircle,
   FiServer,
   FiShield,
@@ -11,6 +13,39 @@ import heroImage from '../assets/hero.png'
 import { getProducts, getServices, getSiteSettings } from '../services/api'
 
 const fallbackAboutText = 'MIFRA Enterprises delivers reliable IT, networking, and industrial technology solutions designed to help businesses operate smarter and more efficiently.'
+
+const capabilitySlides = [
+  {
+    title: 'Global Procurement & Import Solutions',
+    subtitle: 'Reliable sourcing and procurement of specialized products from China, USA, and international markets — including electronics, industrial equipment, chemicals, batteries, and other technical requirements.',
+    buttonLabel: 'Explore Our Services',
+    to: '/services',
+  },
+  {
+    title: 'Aviation Spare Parts & Technical Equipment',
+    subtitle: 'Specialized procurement and sourcing of aviation spare parts, electronic components, and technical equipment from trusted international suppliers.',
+    buttonLabel: 'Explore Aviation Solutions',
+    to: '/services',
+  },
+  {
+    title: 'Procurement Across Multiple Industries',
+    subtitle: 'From electronics and medical equipment to industrial products and specialized technical solutions, we connect businesses with the right products and global suppliers.',
+    buttonLabel: 'View Our Products',
+    to: '/products',
+  },
+  {
+    title: 'IT Services & Technology Solutions',
+    subtitle: 'Professional IT solutions for businesses, including hardware, software, networking, system support, and technology consulting tailored to your requirements.',
+    buttonLabel: 'Explore IT Services',
+    to: '/services',
+  },
+  {
+    title: 'Heavy-Duty UPS Repair & Maintenance',
+    subtitle: 'Reliable repair, troubleshooting, maintenance, and technical support for heavy-duty UPS systems and large-scale power backup equipment.',
+    buttonLabel: 'Explore UPS Services',
+    to: '/services',
+  },
+]
 
 const reasons = [
   {
@@ -125,6 +160,106 @@ function SectionMessage({ children }) {
   return <div className="rounded-md bg-[#F5F5F5] px-6 py-16 text-center text-sm text-[#666666]">{children}</div>
 }
 
+function CapabilitySlider() {
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setPrefersReducedMotion(mediaQuery.matches)
+
+    updatePreference()
+    mediaQuery.addEventListener('change', updatePreference)
+    return () => mediaQuery.removeEventListener('change', updatePreference)
+  }, [])
+
+  useEffect(() => {
+    if (isPaused || prefersReducedMotion) return undefined
+
+    const intervalId = window.setInterval(() => {
+      setActiveIndex((index) => (index + 1) % capabilitySlides.length)
+    }, 4500)
+
+    return () => window.clearInterval(intervalId)
+  }, [isPaused, prefersReducedMotion])
+
+  const goToSlide = (index) => setActiveIndex((index + capabilitySlides.length) % capabilitySlides.length)
+  const slide = capabilitySlides[activeIndex]
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      goToSlide(activeIndex - 1)
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      goToSlide(activeIndex + 1)
+    }
+  }
+
+  return (
+    <section className="overflow-hidden bg-[#F5F5F5] py-12 sm:py-16" aria-labelledby="capabilities-heading">
+      <div className="mifra-container">
+        <div
+          className="relative overflow-hidden rounded-lg bg-[#1a1a1a] px-6 py-10 text-white shadow-[0_8px_24px_rgba(0,0,0,0.16)] sm:px-10 sm:py-14 lg:px-16"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="MIFRA business capabilities"
+          tabIndex="0"
+          onKeyDown={handleKeyDown}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onFocus={() => setIsPaused(true)}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setIsPaused(false)
+          }}
+        >
+          <span className="absolute right-0 top-0 h-24 w-24 border-b-2 border-l-2 border-[#D4AF37] opacity-80" aria-hidden="true" />
+          <span className="absolute bottom-0 left-0 h-16 w-16 border-r-2 border-t-2 border-[#D4AF37] opacity-80" aria-hidden="true" />
+
+          <div key={activeIndex} className="relative max-w-3xl motion-safe:animate-[mifra-slide-enter_450ms_ease-out_both]">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">MIFRA Enterprises</p>
+            <h2 id="capabilities-heading" className="mt-4 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              {slide.title}
+            </h2>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-[#E0E0E0] sm:text-lg">
+              {slide.subtitle}
+            </p>
+            <Link to={slide.to} className="mifra-btn-primary mt-7 min-h-12">
+              {slide.buttonLabel}
+              <FiArrowRight aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div className="relative mt-8 flex items-center justify-between gap-4">
+            <div className="flex gap-2" aria-label="Capability slide selection">
+              {capabilitySlides.map((capability, index) => (
+                <button
+                  key={capability.title}
+                  type="button"
+                  onClick={() => goToSlide(index)}
+                  className={`h-3 w-3 rounded-full transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37] ${index === activeIndex ? 'bg-[#D4AF37]' : 'bg-white/40 hover:bg-white/70'}`}
+                  aria-label={`Show slide ${index + 1}: ${capability.title}`}
+                  aria-current={index === activeIndex ? 'true' : undefined}
+                />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => goToSlide(activeIndex - 1)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border border-[#D4AF37] text-[#D4AF37] transition-colors duration-200 hover:bg-[#D4AF37] hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]" aria-label="Previous capability slide">
+                <FiChevronLeft aria-hidden="true" />
+              </button>
+              <button type="button" onClick={() => goToSlide(activeIndex + 1)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded border border-[#D4AF37] text-[#D4AF37] transition-colors duration-200 hover:bg-[#D4AF37] hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]" aria-label="Next capability slide">
+                <FiChevronRight aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Home() {
   const [aboutText, setAboutText] = useState(fallbackAboutText)
   const [products, setProducts] = useState([])
@@ -133,6 +268,20 @@ function Home() {
   const [isServicesLoading, setIsServicesLoading] = useState(true)
   const [productsError, setProductsError] = useState('')
   const [servicesError, setServicesError] = useState('')
+
+  const featuredProducts = useMemo(() => (
+    [...products].sort((firstProduct, secondProduct) => {
+      const firstFeatured = firstProduct.featured === true || firstProduct.isFeatured === true
+      const secondFeatured = secondProduct.featured === true || secondProduct.isFeatured === true
+      if (firstFeatured !== secondFeatured) return firstFeatured ? -1 : 1
+
+      const firstOrder = Number(firstProduct.displayOrder)
+      const secondOrder = Number(secondProduct.displayOrder)
+      if (Number.isNaN(firstOrder)) return Number.isNaN(secondOrder) ? 0 : 1
+      if (Number.isNaN(secondOrder)) return -1
+      return firstOrder - secondOrder
+    })
+  ), [products])
 
   useEffect(() => {
     let isMounted = true
@@ -205,6 +354,14 @@ function Home() {
           from { opacity: 0; transform: translateY(16px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes mifra-slide-enter {
+          from { opacity: 0; transform: translateX(18px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes mifra-product-marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(calc(-50% - 0.75rem)); }
+        }
         @media (prefers-reduced-motion: reduce) {
           .mifra-hero-motion { animation: none !important; }
         }
@@ -250,6 +407,8 @@ function Home() {
           </div>
         </section>
 
+        <CapabilitySlider />
+
         <section className="bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="featured-products-heading">
           <div className="mifra-container">
             <SectionIntro
@@ -258,7 +417,21 @@ function Home() {
               subtitle="Explore our latest technology and industrial solutions."
             />
             <div className="mt-10">
-              {isProductsLoading ? <LoadingCards count={4} className="grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" /> : productsError ? <SectionMessage>{productsError}</SectionMessage> : products.length === 0 ? <SectionMessage>No products found.</SectionMessage> : <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">{products.map((product) => <ProductCard key={product.id} product={product} />)}</div>}
+              {isProductsLoading ? <LoadingCards count={4} className="grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" /> : productsError ? <SectionMessage>{productsError}</SectionMessage> : featuredProducts.length === 0 ? <SectionMessage>No products found.</SectionMessage> : (
+                <div className="group overflow-hidden" aria-label="Continuously moving featured products carousel">
+                  <div className="flex w-max gap-6 motion-safe:animate-[mifra-product-marquee_32s_linear_infinite] group-hover:[animation-play-state:paused] group-focus-within:[animation-play-state:paused]">
+                    {[0, 1].map((copyIndex) => (
+                      <div key={copyIndex} className="flex shrink-0 gap-6" aria-hidden={copyIndex === 1 ? 'true' : undefined} inert={copyIndex === 1 ? '' : undefined}>
+                        {featuredProducts.map((product) => (
+                          <div key={`${copyIndex}-${product.id}`} className="w-[min(84vw,20rem)] shrink-0 sm:w-72 lg:w-[19rem]">
+                            <ProductCard product={product} />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="mt-10">
               <Link to="/products" className="mifra-btn-primary min-h-12">
