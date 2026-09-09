@@ -14,6 +14,8 @@ import Services from './pages/services.jsx'
 import Requests from './pages/requests.jsx'
 import Settings from './pages/settings.jsx'
 
+// This file is the application entry point, so the route guard must remain local.
+// eslint-disable-next-line react-refresh/only-export-components
 function ProtectedRoute({ children }) {
   const [user, setUser] = useState(undefined)
 

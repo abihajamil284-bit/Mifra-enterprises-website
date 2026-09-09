@@ -13,8 +13,12 @@ export class ApiError extends Error {
 async function getAuthHeaders() {
   const user = auth.currentUser;
   if (!user) throw new ApiError(401, "Your session has ended. Please sign in again.");
-  const token = await user.getIdToken();
-  return { Authorization: `Bearer ${token}` };
+  try {
+    const token = await user.getIdToken();
+    return { Authorization: `Bearer ${token}` };
+  } catch {
+    throw new ApiError(401, "Your session could not be verified. Please sign in again.");
+  }
 }
 
 export async function apiGet(path) {
@@ -23,15 +27,12 @@ export async function apiGet(path) {
   try {
     headers = await getAuthHeaders();
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[MIFRA API] Authentication setup failed", error.message);
     throw error;
   }
-  if (import.meta.env.DEV) console.info("[MIFRA API] GET", url);
   let response;
   try {
     response = await fetch(url, { headers });
-  } catch (error) {
-    if (import.meta.env.DEV) console.error("[MIFRA API] Network request failed", { url, message: error.message });
+  } catch {
     throw new ApiError(0, "We could not reach the dashboard service. Please try again.");
   }
   const body = await response.text();
@@ -41,13 +42,17 @@ export async function apiGet(path) {
   } catch {
     data = body;
   }
-  if (import.meta.env.DEV) console.info("[MIFRA API] Response", { url, status: response.status, body: data });
   if (!response.ok) {
+    const detail = data && typeof data === "object" ? data.detail : "";
     const message = response.status === 401
       ? "Your session could not be verified. Please sign in again."
       : response.status === 403
         ? "Your account does not have permission to access this dashboard."
-        : "We could not load dashboard data. Please try again.";
+        : response.status >= 500
+          ? "The dashboard service is temporarily unavailable. Please try again."
+          : typeof detail === "string" && detail
+            ? detail
+            : "We could not load dashboard data. Please try again.";
     throw new ApiError(response.status, message);
   }
   return data;
