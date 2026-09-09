@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+:root {
+  /* MIFRA Brand Colors */
+  --mifra-black: #000000;
+  --mifra-secondary-black: #1a1a1a;
+
+  --mifra-gold: #d4af37;
+  --mifra-secondary-gold: #c9a227;
+  --mifra-dark-gold: #8b6f47;
+
+  --mifra-white: #ffffff;
+  --mifra-light-gray: #f5f5f5;
+  --mifra-medium-gray: #e0e0e0;
+  --mifra-dark-gray: #666666;
+
+  /* Status Colors */
+  --success: #27ae60;
+  --warning: #f39c12;
+  --error: #e74c3c;
+  --info: #3498db;
+
+  /* Typography */
+  font-family: "Segoe UI", Inter, Roboto, Arial, sans-serif;
+
+  color: var(--mifra-black);
+  background-color: var(--mifra-white);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--mifra-white);
+  color: var(--mifra-black);
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Buttons */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Container */
+.mifra-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Section spacing */
+.mifra-section {
+  padding-top: 60px;
+  padding-bottom: 60px;
+}
+
+/* Primary Button */
+.mifra-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background: var(--mifra-gold);
+  color: var(--mifra-black);
+
+  padding: 12px 24px;
+  border-radius: 4px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  border: 1px solid var(--mifra-gold);
+
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.mifra-btn-primary:hover {
+  background: var(--mifra-secondary-gold);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.mifra-btn-primary:active {
+  background: var(--mifra-dark-gold);
+  transform: translateY(0);
+}
+
+/* Secondary Button */
+.mifra-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background: var(--mifra-white);
+  color: var(--mifra-black);
+
+  padding: 12px 24px;
+  border-radius: 4px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  border: 2px solid var(--mifra-black);
+
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.mifra-btn-secondary:hover {
+  background: var(--mifra-light-gray);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Outline Gold Button */
+.mifra-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background: transparent;
+  color: var(--mifra-gold);
+
+  padding: 12px 24px;
+  border-radius: 4px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  border: 1px solid var(--mifra-gold);
+
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.mifra-btn-outline:hover {
+  background: rgba(212, 175, 55, 0.1);
+}
+
+/* Card */
+.mifra-card {
+  background: var(--mifra-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  transition:
+    box-shadow 300ms ease,
+    transform 300ms ease;
+}
+
+.mifra-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Focus accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--mifra-gold);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .mifra-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .mifra-section {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .mifra-container {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .mifra-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+}
