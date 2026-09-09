@@ -268,6 +268,7 @@ function Home() {
   const [servicesError, setServicesError] = useState('')
   const productCarouselRef = useRef(null)
   const [isProductCarouselVisible, setIsProductCarouselVisible] = useState(false)
+  const [isProductCarouselPaused, setIsProductCarouselPaused] = useState(false)
 
   useEffect(() => {
     const carousel = productCarouselRef.current
@@ -280,7 +281,7 @@ function Home() {
 
     observer.observe(carousel)
     return () => observer.disconnect()
-  }, [])
+  }, [isProductsLoading, products.length])
 
   const featuredProducts = useMemo(() => (
     [...products].sort((firstProduct, secondProduct) => {
@@ -380,8 +381,21 @@ function Home() {
             />
             <div className="mt-10">
               {isProductsLoading ? <LoadingCards count={4} className="grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" /> : productsError ? <SectionMessage>{productsError}</SectionMessage> : featuredProducts.length === 0 ? <SectionMessage>No products found.</SectionMessage> : (
-                <div ref={productCarouselRef} className="group overflow-hidden" aria-label="Continuously moving featured products carousel">
-                  <div className={`flex w-max gap-6 ${isProductCarouselVisible ? 'motion-safe:animate-[mifra-product-marquee_32s_linear_infinite]' : ''} group-hover:[animation-play-state:paused] group-focus-within:[animation-play-state:paused]`}>
+                <div
+                  ref={productCarouselRef}
+                  className="overflow-hidden"
+                  aria-label="Continuously moving featured products carousel"
+                  onMouseEnter={() => setIsProductCarouselPaused(true)}
+                  onMouseLeave={() => setIsProductCarouselPaused(false)}
+                  onFocus={() => setIsProductCarouselPaused(true)}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) setIsProductCarouselPaused(false)
+                  }}
+                >
+                  <div
+                    className="flex w-max gap-6 motion-safe:animate-[mifra-product-marquee_32s_linear_infinite]"
+                    style={{ animationPlayState: isProductCarouselVisible && !isProductCarouselPaused ? 'running' : 'paused' }}
+                  >
                     {[0, 1].map((copyIndex) => (
                       <div key={copyIndex} className="flex shrink-0 gap-6" aria-hidden={copyIndex === 1 ? 'true' : undefined} inert={copyIndex === 1 ? '' : undefined}>
                         {featuredProducts.map((product) => (
