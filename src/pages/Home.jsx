@@ -10,9 +10,7 @@ import {
 } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 import heroImage from '../assets/hero.png'
-import { getProducts, getServices, getSiteSettings } from '../services/api'
-
-const fallbackAboutText = 'MIFRA Enterprises delivers reliable IT, networking, and industrial technology solutions designed to help businesses operate smarter and more efficiently.'
+import { getCategories, getProducts, getServices } from '../services/api'
 
 const capabilitySlides = [
   {
@@ -84,7 +82,7 @@ function SectionIntro({ title, subtitle, light = false, id }) {
   )
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, categoryName }) {
   const stockQuantity = Number(product.stockQuantity) || 0
   const lowStockThreshold = Number(product.lowStockThreshold) || 0
   const stockStatus = stockQuantity <= 0
@@ -104,7 +102,7 @@ function ProductCard({ product }) {
         />
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#666666]">{product.category}</p>
+        {categoryName && <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#666666]">{categoryName}</p>}
         <h3 className="mt-2 text-lg font-semibold text-[#1a1a1a]">{product.name}</h3>
         <p className="mt-3 flex-1 text-sm leading-6 text-[#666666]">{product.description}</p>
         <div className="mt-5 flex items-center justify-between gap-3">
@@ -115,7 +113,7 @@ function ProductCard({ product }) {
             </span>
           </div>
           <Link
-            to="/products"
+            to={`/products/${product.id}`}
             className="inline-flex min-h-12 items-center gap-2 text-sm font-semibold text-[#1a1a1a] transition-colors duration-200 hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
           >
             View Product
@@ -136,7 +134,7 @@ function ServiceCard({ service }) {
       </h3>
       <p className="mt-3 text-sm leading-6 text-[#666666]">{service.description}</p>
       <Link
-        to="/services"
+        to={`/services/${service.id}`}
         className="mt-5 inline-flex min-h-12 items-center gap-2 text-sm font-semibold text-[#1a1a1a] transition-colors duration-200 hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
       >
         Learn More
@@ -261,8 +259,8 @@ function CapabilitySlider() {
 }
 
 function Home() {
-  const [aboutText, setAboutText] = useState(fallbackAboutText)
   const [products, setProducts] = useState([])
+  const [categoryNames, setCategoryNames] = useState({})
   const [services, setServices] = useState([])
   const [isProductsLoading, setIsProductsLoading] = useState(true)
   const [isServicesLoading, setIsServicesLoading] = useState(true)
@@ -286,29 +284,8 @@ function Home() {
   useEffect(() => {
     let isMounted = true
 
-    const fetchSiteSettings = async () => {
-      try {
-        const settings = await getSiteSettings()
-        if (isMounted && typeof settings?.about_text === 'string' && settings.about_text.trim()) {
-          setAboutText(settings.about_text)
-        }
-      } catch {
-        if (isMounted) setAboutText(fallbackAboutText)
-      }
-    }
-
-    fetchSiteSettings()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    let isMounted = true
-
     const fetchHomepageData = async () => {
-      const [productsResult, servicesResult] = await Promise.allSettled([getProducts(), getServices()])
+      const [productsResult, servicesResult, categoriesResult] = await Promise.allSettled([getProducts(), getServices(), getCategories()])
 
       if (!isMounted) return
 
@@ -321,6 +298,22 @@ function Home() {
         setProductsError('Unable to load products.')
       }
       setIsProductsLoading(false)
+
+      if (categoriesResult.status === 'fulfilled') {
+        const data = categoriesResult.value
+        const categories = Array.isArray(data) ? data : data?.categories || data?.data || []
+        const namesById = categories.reduce((names, category) => {
+          const categoryId = category.id || category._id || category.categoryId
+          const categoryName = category.name
+
+          if (typeof categoryId === 'string' && categoryId.trim() && typeof categoryName === 'string' && categoryName.trim()) {
+            names[categoryId] = categoryName
+          }
+
+          return names
+        }, {})
+        setCategoryNames(namesById)
+      }
 
       if (servicesResult.status === 'fulfilled') {
         const data = servicesResult.value
@@ -350,10 +343,6 @@ function Home() {
   return (
     <>
       <style>{`
-        @keyframes mifra-hero-enter {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
         @keyframes mifra-slide-enter {
           from { opacity: 0; transform: translateX(18px); }
           to { opacity: 1; transform: translateX(0); }
@@ -362,51 +351,9 @@ function Home() {
           from { transform: translateX(0); }
           to { transform: translateX(calc(-50% - 0.75rem)); }
         }
-        @media (prefers-reduced-motion: reduce) {
-          .mifra-hero-motion { animation: none !important; }
-        }
       `}</style>
 
       <div>
-        <section className="overflow-hidden bg-[#1a1a1a] text-white">
-          <div className="mifra-container grid min-h-[520px] items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:py-24">
-            <div className="mifra-hero-motion max-w-2xl motion-safe:animate-[mifra-hero-enter_500ms_ease-out_both]">
-              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
-                IT &amp; Industrial Technology Solutions
-              </p>
-              <h1 className="mt-5 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Technology Solutions Built for Business
-              </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-[#E0E0E0] sm:text-lg">
-                {aboutText}
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link to="/products" className="mifra-btn-primary min-h-12">
-                  Browse Products
-                </Link>
-                <Link
-                  to="/services"
-                  className="inline-flex min-h-12 items-center justify-center rounded border border-[#D4AF37] px-6 text-sm font-semibold text-[#D4AF37] transition-colors duration-200 hover:bg-[#D4AF37] hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]"
-                >
-                  View Services
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative mx-auto w-full max-w-xl lg:justify-self-end">
-              <span className="absolute -right-3 -top-3 h-20 w-20 border-r-2 border-t-2 border-[#D4AF37] sm:-right-4 sm:-top-4" aria-hidden="true" />
-              <div className="mifra-hero-motion relative aspect-[4/3] overflow-hidden rounded-lg bg-black p-6 shadow-2xl motion-safe:animate-[mifra-hero-enter_500ms_ease-out_both] sm:p-10">
-                <img
-                  src={heroImage}
-                  alt="Abstract MIFRA technology platform illustration"
-                  className="h-full w-full object-contain"
-                />
-              </div>
-              <span className="absolute -bottom-3 -left-3 h-14 w-14 border-b-2 border-l-2 border-[#D4AF37] sm:-bottom-4 sm:-left-4" aria-hidden="true" />
-            </div>
-          </div>
-        </section>
-
         <CapabilitySlider />
 
         <section className="bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="featured-products-heading">
@@ -424,7 +371,7 @@ function Home() {
                       <div key={copyIndex} className="flex shrink-0 gap-6" aria-hidden={copyIndex === 1 ? 'true' : undefined} inert={copyIndex === 1 ? '' : undefined}>
                         {featuredProducts.map((product) => (
                           <div key={`${copyIndex}-${product.id}`} className="w-[min(84vw,20rem)] shrink-0 sm:w-72 lg:w-[19rem]">
-                            <ProductCard product={product} />
+                            <ProductCard product={product} categoryName={categoryNames[product.category]} />
                           </div>
                         ))}
                       </div>

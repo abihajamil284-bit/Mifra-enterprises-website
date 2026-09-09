@@ -1,219 +1,224 @@
 import {
-	FiFacebook,
-	FiInstagram,
-	FiLinkedin,
-	FiMail,
-	FiMessageCircle,
-	FiMapPin,
-	FiPhone,
+    FiMail,
+    FiMapPin,
+    FiMessageCircle,
+    FiPhone,
 } from 'react-icons/fi'
-import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
-import { getServices, getSiteSettings } from '../services/api'
 
-const fallbackSiteSettings = {
-	company_name: 'MIFRA ENTERPRISES SMC PVT LTD',
-	email: 'mifraenterprise786@gmail.com',
-	phone: ['03005410228', '03077875228'],
-	address: [
-		'New Shakrial, Bannd Kanna Road, Abdullah Mosque Street #2, Rawalpindi',
-		'Murree Road, Ground Floor, Talha Heights, Rawalpindi',
-	],
-	about_text: 'Deals in IT, Electronics, Network Equipment, Aviation Spares & Software Solutions. All Types of Repair Services. Government Contractor & General Order Supplier.',
-	whatsapp: 'https://wa.me/923005410228',
+const companyName = 'MIFRA ENTERPRISES SMC PVT LTD'
+
+const contactInfo = {
+    email: 'mifraenterprise786@gmail.com',
+    phones: ['03005410228', '03077875228'],
+    addresses: [
+        'New Shakrial, Bannd Kanna Road, Abdullah Mosque Street #2, Rawalpindi',
+        'Murree Road, Ground Floor, Talha Heights, Rawalpindi',
+    ],
+    whatsapp: 'https://wa.me/923005410228',
 }
 
 const quickLinks = [
-	{ label: 'Home', to: '/' },
-	{ label: 'About', to: '/about' },
-	{ label: 'Products', to: '/products' },
-	{ label: 'Services', to: '/services' },
-	{ label: 'Contact', to: '/contact' },
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
+    { name: 'Products', path: '/products' },
+    { name: 'Services', path: '/services' },
+    { name: 'Contact', path: '/contact' },
 ]
 
-const footerLinkClasses =
-	'inline-flex min-h-10 items-center text-sm text-[#E0E0E0] transition-colors duration-200 hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]'
+const services = [
+    'IT & Electronics',
+    'Network Equipment',
+    'Aviation Spares',
+    'Software Solutions',
+    'Repair Services',
+    'Government Contracting',
+]
 
 function Footer() {
-	const [siteSettings, setSiteSettings] = useState(fallbackSiteSettings)
-	const [services, setServices] = useState([])
+    return (
+        <footer className="bg-[#0B0B0B] text-white">
+            {/* Main Footer */}
+            <div className="mx-auto max-w-7xl px-6 py-14 lg:px-8">
+                <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
 
-	useEffect(() => {
-		let isMounted = true
+                    {/* Company */}
+                    <div>
+                        <h2 className="text-xl font-bold tracking-wide text-white">
+                            {companyName}
+                        </h2>
 
-		const fetchSiteSettings = async () => {
-			try {
-				const data = await getSiteSettings()
-				if (isMounted) setSiteSettings(data || fallbackSiteSettings)
-			} catch {
-				if (isMounted) setSiteSettings(fallbackSiteSettings)
-			}
-		}
+                        <div className="mt-3 h-0.5 w-12 bg-[#D4AF37]" />
 
-		fetchSiteSettings()
+                        <p className="mt-4 text-sm font-semibold text-[#D4AF37]">
+                            CEO &amp; Founder: M. Ramzan
+                        </p>
 
-		return () => {
-			isMounted = false
-		}
-	}, [])
+                        <p className="mt-4 max-w-sm text-sm leading-7 text-[#BDBDBD]">
+                            MIFRA Enterprises deals in IT, electronics,
+                            network equipment, aviation spares, software
+                            solutions, repair services, government
+                            contracting, and general order supply.
+                        </p>
+                    </div>
 
-	useEffect(() => {
-		let isMounted = true
+                    {/* Quick Links */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">
+                            Quick Links
+                        </h3>
 
-		const fetchServices = async () => {
-			try {
-				const data = await getServices()
-				const activeServices = (Array.isArray(data) ? data : data?.services || data?.data || [])
-					.filter((service) => service.isActive !== false)
-					.sort((firstService, secondService) => {
-						const firstOrder = Number(firstService.displayOrder)
-						const secondOrder = Number(secondService.displayOrder)
-						if (Number.isNaN(firstOrder)) return Number.isNaN(secondOrder) ? 0 : 1
-						if (Number.isNaN(secondOrder)) return -1
-						return firstOrder - secondOrder
-					})
-				if (isMounted) setServices(activeServices)
-			} catch {
-				if (isMounted) setServices([])
-			}
-		}
+                        <div className="mt-3 h-0.5 w-10 bg-[#D4AF37]" />
 
-		fetchServices()
+                        <ul className="mt-5 space-y-3">
+                            {quickLinks.map((link) => (
+                                <li key={link.path}>
+                                    <NavLink
+                                        to={link.path}
+                                        className="text-sm text-[#BDBDBD] transition-colors duration-200 hover:text-[#D4AF37]"
+                                    >
+                                        {link.name}
+                                    </NavLink>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-		return () => {
-			isMounted = false
-		}
-	}, [])
+                    {/* Services */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">
+                            Our Services
+                        </h3>
 
-	const companyName = siteSettings.company_name || fallbackSiteSettings.company_name
-	const aboutText = siteSettings.about_text || fallbackSiteSettings.about_text
-	const phoneNumbers = Array.isArray(siteSettings.phone) ? siteSettings.phone : siteSettings.phone ? [siteSettings.phone] : []
-	const addresses = Array.isArray(siteSettings.address) ? siteSettings.address : siteSettings.address ? [siteSettings.address] : []
+                        <div className="mt-3 h-0.5 w-10 bg-[#D4AF37]" />
 
-	return (
-		<footer className="bg-black text-white">
-			<div className="mifra-container py-12 sm:py-14 lg:py-16">
-				<div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-					<section>
-						<NavLink
-							to="/"
-							className="inline-block text-lg font-bold tracking-[0.12em] text-white transition-colors duration-200 hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D4AF37]"
-						>
-							{siteSettings.logo ? <img src={siteSettings.logo} alt={companyName} className="h-auto max-h-10 w-auto object-contain" /> : companyName}
-						</NavLink>
-						<p className="mt-3 text-sm font-semibold text-[#D4AF37]">CEO &amp; Founder: M. Ramzan</p>
-						<p className="mt-4 max-w-xs text-sm leading-7 text-[#E0E0E0]">
-							{aboutText}
-						</p>
+                        <ul className="mt-5 space-y-3">
+                            {services.map((service) => (
+                                <li
+                                    key={service}
+                                    className="text-sm text-[#BDBDBD]"
+                                >
+                                    {service}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-						<div className="mt-6">
-							<p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
-								Connect with us
-							</p>
-							<div className="mt-3 flex gap-2" aria-label="Social media">
-								<span
-									className="inline-flex h-10 w-10 items-center justify-center text-lg text-[#D4AF37]"
-									title="LinkedIn coming soon"
-									aria-label="LinkedIn coming soon"
-								>
-									<FiLinkedin aria-hidden="true" />
-								</span>
-								{siteSettings.facebook ? <a
-									href={siteSettings.facebook}
-									className="inline-flex h-10 w-10 items-center justify-center text-lg text-[#D4AF37]"
-									title="Facebook"
-									aria-label="Facebook"
-								>
-									<FiFacebook aria-hidden="true" />
-								</a> : <span
-									className="inline-flex h-10 w-10 items-center justify-center text-lg text-[#D4AF37]"
-									title="Facebook coming soon"
-									aria-label="Facebook coming soon"
-								>
-									<FiFacebook aria-hidden="true" />
-								</span>}
-								{siteSettings.instagram ? <a
-									href={siteSettings.instagram}
-									className="inline-flex h-10 w-10 items-center justify-center text-lg text-[#D4AF37]"
-									title="Instagram"
-									aria-label="Instagram"
-								>
-									<FiInstagram aria-hidden="true" />
-								</a> : <span
-									className="inline-flex h-10 w-10 items-center justify-center text-lg text-[#D4AF37]"
-									title="Instagram coming soon"
-									aria-label="Instagram coming soon"
-								>
-									<FiInstagram aria-hidden="true" />
-								</span>}
-							</div>
-						</div>
-					</section>
+                    {/* Contact */}
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">
+                            Contact Us
+                        </h3>
 
-					<nav aria-label="Footer quick links">
-						<h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
-							Quick Links
-						</h2>
-						<ul className="mt-4 space-y-1">
-							{quickLinks.map((link) => (
-								<li key={link.to}>
-									<NavLink to={link.to} className={footerLinkClasses}>
-										{link.label}
-									</NavLink>
-								</li>
-							))}
-						</ul>
-					</nav>
+                        <div className="mt-3 h-0.5 w-10 bg-[#D4AF37]" />
 
-					<nav aria-label="Footer services">
-						<h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
-							Services
-						</h2>
-						<ul className="mt-4 space-y-1">
-							{services.map((service) => (
-								<li key={service.id}>
-									<NavLink to={`/services/${service.id}`} className={footerLinkClasses}>{service.name}</NavLink>
-								</li>
-							))}
-						</ul>
-					</nav>
+                        <ul className="mt-5 space-y-4">
 
-					<section>
-						<h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
-							Contact
-						</h2>
-						<address className="mt-4 not-italic">
-							<ul className="space-y-3 text-sm leading-6 text-[#E0E0E0]">
-								<li className="flex items-start gap-3">
-									<FiMapPin className="mt-1 shrink-0 text-[#D4AF37]" aria-hidden="true" />
-										<span>{addresses[0]}</span>
-								</li>
-									{addresses.slice(1).map((address) => <li key={address} className="flex items-start gap-3"><FiMapPin className="mt-1 shrink-0 text-[#D4AF37]" aria-hidden="true" /><span>{address}</span></li>)}
-								<li className="flex items-start gap-3">
-									<FiPhone className="mt-1 shrink-0 text-[#D4AF37]" aria-hidden="true" />
-									<span className="flex flex-col items-start">
-											{phoneNumbers.map((phone) => <a key={phone} href={`tel:${phone}`} className="transition-colors hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]">{phone}</a>)}
-									</span>
-								</li>
-								<li className="flex items-start gap-3">
-									<FiMail className="mt-1 shrink-0 text-[#D4AF37]" aria-hidden="true" />
-										<a href={`mailto:${siteSettings.email || fallbackSiteSettings.email}`} className="break-all transition-colors hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]">{siteSettings.email || fallbackSiteSettings.email}</a>
-								</li>
-								<li className="flex items-start gap-3">
-									<FiMessageCircle className="mt-1 shrink-0 text-[#D4AF37]" aria-hidden="true" />
-										{siteSettings.whatsapp ? <a href={siteSettings.whatsapp} className="transition-colors hover:text-[#D4AF37] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4AF37]">WhatsApp</a> : <span>WhatsApp</span>}
-								</li>
-							</ul>
-						</address>
-					</section>
-				</div>
+                            {/* Address 1 */}
+                            <li className="flex items-start gap-3">
+                                <FiMapPin
+                                    className="mt-1 shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
 
-				<div className="mt-10 border-t border-[#1a1a1a] pt-6 text-xs text-[#999999]">
-					<p>© 2026 {companyName}. All rights reserved.</p>
-				</div>
-			</div>
-		</footer>
-	)
+                                <span className="text-sm leading-6 text-[#BDBDBD]">
+                                    {contactInfo.addresses[0]}
+                                </span>
+                            </li>
+
+                            {/* Address 2 */}
+                            <li className="flex items-start gap-3">
+                                <FiMapPin
+                                    className="mt-1 shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
+
+                                <span className="text-sm leading-6 text-[#BDBDBD]">
+                                    {contactInfo.addresses[1]}
+                                </span>
+                            </li>
+
+                            {/* Phone 1 */}
+                            <li className="flex items-center gap-3">
+                                <FiPhone
+                                    className="shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
+
+                                <a
+                                    href={`tel:${contactInfo.phones[0]}`}
+                                    className="text-sm text-[#BDBDBD] transition-colors duration-200 hover:text-[#D4AF37]"
+                                >
+                                    {contactInfo.phones[0]}
+                                </a>
+                            </li>
+
+                            {/* Phone 2 */}
+                            <li className="flex items-center gap-3">
+                                <FiPhone
+                                    className="shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
+
+                                <a
+                                    href={`tel:${contactInfo.phones[1]}`}
+                                    className="text-sm text-[#BDBDBD] transition-colors duration-200 hover:text-[#D4AF37]"
+                                >
+                                    {contactInfo.phones[1]}
+                                </a>
+                            </li>
+
+                            {/* Email */}
+                            <li className="flex items-center gap-3">
+                                <FiMail
+                                    className="shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
+
+                                <a
+                                    href={`mailto:${contactInfo.email}`}
+                                    className="break-all text-sm text-[#BDBDBD] transition-colors duration-200 hover:text-[#D4AF37]"
+                                >
+                                    {contactInfo.email}
+                                </a>
+                            </li>
+
+                            {/* WhatsApp */}
+                            <li className="flex items-center gap-3">
+                                <FiMessageCircle
+                                    className="shrink-0 text-xl text-[#D4AF37]"
+                                    aria-hidden="true"
+                                />
+
+                                <a
+                                    href={contactInfo.whatsapp}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-[#BDBDBD] transition-colors duration-200 hover:text-[#D4AF37]"
+                                >
+                                    WhatsApp
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="border-t border-[#252525]">
+                <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-5 text-center sm:flex-row sm:text-left lg:px-8">
+                    <p className="text-sm text-[#888888]">
+                        © {new Date().getFullYear()} {companyName}. All rights reserved.
+                    </p>
+
+                    <p className="text-sm text-[#888888]">
+                        Professional Solutions. Trusted Service.
+                    </p>
+                </div>
+            </div>
+        </footer>
+    )
 }
 
 export default Footer
