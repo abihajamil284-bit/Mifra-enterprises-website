@@ -13,7 +13,7 @@ const contactInfo = {
     phones: ['03005410228', '03077875228'],
     addresses: [
         'New Shakrial, Bannd Kanna Road, Abdullah Mosque Street #2, Rawalpindi',
-        'Murree Road, Ground Floor, Talha Heights, Rawalpindi',
+        'Office No. 37, Al-Ahad Tower, Near Committee Chowk, Sherpao Colony, Rawalpindi',
     ],
     whatsapp: 'https://wa.me/923005410228',
 }

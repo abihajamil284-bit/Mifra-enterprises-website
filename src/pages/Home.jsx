@@ -177,7 +177,7 @@ function CapabilitySlider() {
 
     const intervalId = window.setInterval(() => {
       setActiveIndex((index) => (index + 1) % capabilitySlides.length)
-    }, 4500)
+    }, 3500)
 
     return () => window.clearInterval(intervalId)
   }, [isPaused, prefersReducedMotion])
