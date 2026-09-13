@@ -4,6 +4,7 @@ import { FaEye, FaPlus, FaRedo } from "react-icons/fa";
 import AdminLayout from "../components/AdminLayout.jsx";
 import Metrics from "../components/Metrics.jsx";
 import { getAdminRequests, getDashboard } from "../services/api";
+import { loadRequestRelations, requestItemName } from "../services/requestRelations";
 import "../App.css";
 
 function QuickActions() {
@@ -21,12 +22,16 @@ function normalizeMetrics(data) {
   };
 }
 
-function requestRows(requests) {
+function requestRows(requests, productMap, serviceMap) {
   return requests.slice(0, 10).map((request) => ({
     id: request.id,
-    customer: request.customer_name,
+    customer: request.customer_name && (request.customer_id ?? request.customerId)
+      ? `${request.customer_name} (Customer ID: ${request.customer_id ?? request.customerId})`
+      : request.customer_id ?? request.customerId
+        ? `Customer ID: ${request.customer_id ?? request.customerId}`
+        : request.customer_name || "Unknown Customer",
     type: request.request_type,
-    item: request.request_type === "product" ? request.product_id : request.service_id,
+    item: requestItemName(request, productMap, serviceMap),
     quantity: request.quantity ?? "—",
     status: request.status,
     date: request.created_at,
@@ -57,9 +62,11 @@ function Admin() {
     setIsLoading(true);
     setError("");
     try {
-      const result = await getDashboard();
+      const [result, adminRequests] = await Promise.all([getDashboard(), getAdminRequests()]);
       setDashboard(normalizeMetrics(result));
-      setRequests(Array.isArray(result.recent_requests) ? requestRows(result.recent_requests) : requestRows(await getAdminRequests()));
+      const requests = Array.isArray(adminRequests) ? adminRequests : adminRequests?.requests || result.recent_requests || [];
+      const { productMap, serviceMap } = await loadRequestRelations(requests);
+      setRequests(requestRows(requests, productMap, serviceMap));
     } catch (loadError) {
       setError(loadError.message || "We could not load dashboard data. Please try again.");
     } finally {

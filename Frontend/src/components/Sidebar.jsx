@@ -1,4 +1,3 @@
-import UserLOgOut from "../assets/Log-Out-userpng.png"
 import { NavLink } from "react-router-dom";
 
 
@@ -63,7 +62,12 @@ const LogoutIcon = () => (
   </svg>
 );
 
-function Sidebar({ isOpen, onClose, onLogout }) {
+function userInitials(user) {
+  const source = user?.displayName || user?.email || "Admin";
+  return source.split(/[\s@]+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join("");
+}
+
+function Sidebar({ isOpen, onClose, onLogout, user }) {
 
 
 
@@ -74,12 +78,9 @@ function Sidebar({ isOpen, onClose, onLogout }) {
     <aside className={`sidebar ${isOpen ? "is-open" : ""}`}>
       <div className="sidebar-top">
         <div className="logo-area">
-          <div className="logo-icon-bg">
-            M
-          </div>
+          <img src="/images/logo.png" alt="Mifra Enterprises SMC Pvt Ltd" className="sidebar-logo" />
           <div className="logo-text">
-            <div className="logo-main">MIFRA</div>
-            <div className="logo-sub">ENTERPRISES</div>
+            <div className="logo-main">Mifra Enterprises SMC Pvt Ltd</div>
           </div>
           <button className="sidebar-close" type="button" aria-label="Close navigation menu" onClick={onClose}>×</button>
         </div>
@@ -112,18 +113,10 @@ function Sidebar({ isOpen, onClose, onLogout }) {
       </div>
       <div className="sidebar-bottom">
         <div className="user-profile">
-          <img
-            src={UserLOgOut}
-            alt="Mifra Admin"
-            className="user-avatar"
-          />
+          {user?.photoURL ? <img src={user.photoURL} alt={user.displayName || user.email || "Admin"} className="user-avatar" /> : <div className="user-avatar user-avatar-fallback" aria-hidden="true">{userInitials(user)}</div>}
           <div className="user-info">
-            <div className="user-name">
-              Mifra Admin
-            </div>
-            <div className="user-role">
-              Super Admin
-            </div>
+            <div className="user-name">{user?.displayName || user?.email || "Admin"}</div>
+            <div className="user-role">Admin</div>
           </div>
         </div>
         <button className="btn-logout" type="button" onClick={onLogout}>

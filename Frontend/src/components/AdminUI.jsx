@@ -21,11 +21,11 @@ export function Modal({ title, children, onClose }) {
   return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}><header className="modal-header"><h2 id="modal-title">{title}</h2><button className="icon-button" type="button" aria-label="Close dialog" onClick={onClose}><FaTimes /></button></header>{children}</section></div>;
 }
 
-export function FormField({ label, type = "text", placeholder, textarea = false, children }) {
-  return <label className="form-field"><span>{label}</span>{children || (textarea ? <textarea placeholder={placeholder} rows="4" /> : <input type={type} placeholder={placeholder} />)}</label>;
+export function FormField({ label, type = "text", placeholder, textarea = false, children, ...inputProps }) {
+  return <label className="form-field"><span>{label}</span>{children || (textarea ? <textarea placeholder={placeholder} rows="4" {...inputProps} /> : <input type={type} placeholder={placeholder} {...inputProps} />)}</label>;
 }
 
-export function Toggle({ label }) { return <label className="toggle-field"><input type="checkbox" /><span className="toggle" aria-hidden="true" />{label}</label>; }
+export function Toggle({ label, ...inputProps }) { return <label className="toggle-field"><input type="checkbox" {...inputProps} /><span className="toggle" aria-hidden="true" />{label}</label>; }
 
 export function DataTable({ columns, children, label }) {
   return <section className="data-table-card"><div className="table-scroll"><table className="data-table"><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{children}</tbody></table></div>{label && <div className="table-caption">{label}</div>}</section>;
