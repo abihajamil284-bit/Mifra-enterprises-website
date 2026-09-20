@@ -58,15 +58,6 @@ const Login = () => {
     <div className="login-page">
 
       <div className="login-left">
-        <div className="login-brand">
-          <div className="login-logo">
-            M
-          </div>
-          <div>
-            <h2>MIFRA</h2>
-            <span>ENTERPRISES</span>
-          </div>
-        </div>
         <div className="login-left-content">
           <span className="login-label">ADMIN PORTAL</span>
           <h1>
@@ -86,15 +77,6 @@ const Login = () => {
       </div>
       <div className="login-right">
         <div className="login-card">
-          <div className="mobile-login-brand">
-            <div className="login-logo">
-              M
-            </div>
-            <div>
-              <h2>MIFRA</h2>
-              <span>ENTERPRISES</span>
-            </div>
-          </div>
           <div className="login-header">
             <span>WELCOME BACK</span>
             <h2>Admin Login</h2>

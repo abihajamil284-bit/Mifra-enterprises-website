@@ -79,6 +79,6 @@ function TopBar({ onMenuToggle, onLogout, user }) {
       {profileOpen && <div className="topbar-popover profile-popover"><div className="profile-popover-header"><strong>{userName}</strong><small>{user?.email || ""}</small></div><Link to="/admin/settings" onClick={closeMenus}>Manage Account / Settings</Link><button type="button" onClick={() => { closeMenus(); onLogout(); }}>Logout</button></div>}
     </div>
   </header>;
-}
+} 
 
 export default TopBar;

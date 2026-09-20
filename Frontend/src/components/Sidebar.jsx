@@ -78,7 +78,7 @@ function Sidebar({ isOpen, onClose, onLogout, user }) {
     <aside className={`sidebar ${isOpen ? "is-open" : ""}`}>
       <div className="sidebar-top">
         <div className="logo-area">
-          <img src="/images/logo.png" alt="Mifra Enterprises SMC Pvt Ltd" className="sidebar-logo" />
+          <img src="/images/mifra-logo.png" alt="Mifra Enterprises SMC Pvt Ltd" className="sidebar-logo" />
           <div className="logo-text">
             <div className="logo-main">Mifra Enterprises SMC Pvt Ltd</div>
           </div>
